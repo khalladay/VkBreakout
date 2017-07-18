@@ -16,5 +16,5 @@ out gl_PerVertex
 void main() 
 {
     gl_Position = vec4(vertex, 1.0);// * mvp.data;
-    fragColor = vec4(1,0,0,1);//col.col;
+    fragColor = col.col;
 }

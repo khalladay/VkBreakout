@@ -17,7 +17,7 @@ public:
 	Primitive();
 	~Primitive();
 
-	const RenderPrimitive* GetRenderPrimitive();
+	RenderPrimitive GetRenderPrimitive() const;
 
 	glm::vec3 pos;
 	glm::vec4 col;

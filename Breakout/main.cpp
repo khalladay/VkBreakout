@@ -23,7 +23,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE pInstance, LPSTR cmdLine, int
 
 	createMeshes();
 
-	paddlePrim.col = glm::vec4(1, 0, 0, 1);
+	paddlePrim.col = glm::vec4(1, 1, 0, 1);
 	paddlePrim.scale = glm::vec3(1, 1, 1);
 	paddlePrim.pos = glm::vec4(0.0, 0.5, 0.5, 0.5);
 	paddlePrim.meshResource = rectMesh;

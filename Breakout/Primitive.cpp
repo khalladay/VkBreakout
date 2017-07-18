@@ -11,9 +11,10 @@ Primitive::~Primitive()
 
 }
 
-const RenderPrimitive* Primitive::GetRenderPrimitive()
+RenderPrimitive Primitive::GetRenderPrimitive() const
 {
-	renderPrim.model = glm::translate(pos) * glm::scale(scale);
-	renderPrim.color = col;
-	return &renderPrim;
+	RenderPrimitive prim;
+	prim.model = glm::translate(pos) * glm::scale(scale);
+	prim.color = col;
+	return prim;
 }

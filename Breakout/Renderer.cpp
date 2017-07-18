@@ -26,6 +26,15 @@ void Renderer::draw(const class Primitive* blockPrims, const class Primitive* ba
 	//acquire an image from the swap chain
 	uint32_t imageIndex;
 
+	
+
+	void* data;
+	vkMapMemory(context.lDevice.device, uniformBufferMemory, 0, sizeof(glm::vec4), 0, &data);
+	memcpy(data, &(paddlePrims[0].GetRenderPrimitive()).color, sizeof(glm::vec4));
+	vkUnmapMemory(context.lDevice.device, uniformBufferMemory);
+
+
+
 	//using uint64 max for timeout disables it
 	res = vkAcquireNextImageKHR(context.lDevice.device, context.swapChain.swapChain, UINT64_MAX, context.imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
 
@@ -75,6 +84,10 @@ void Renderer::draw(const class Primitive* blockPrims, const class Primitive* ba
 	vkCmdBindPipeline(context.commandBuffers[imageIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, blockMaterial.gfxPipeline);
 	VkBuffer vertexBuffers[] = { paddlePrims[0].meshResource->vBuffer };
 	VkDeviceSize offsets[] = { 0 };
+
+
+	vkCmdBindDescriptorSets(context.commandBuffers[imageIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, blockMaterial.pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
+
 	vkCmdBindVertexBuffers(context.commandBuffers[imageIndex], 0, 1, vertexBuffers, offsets);
 	vkCmdBindIndexBuffer(context.commandBuffers[imageIndex], paddlePrims[0].meshResource->indexBuffer, 0, VK_INDEX_TYPE_UINT16);
 	vkCmdDrawIndexed(context.commandBuffers[imageIndex], static_cast<uint32_t>(paddlePrims[0].meshResource->indexCount), 1, 0, 0, 0);
@@ -149,7 +162,7 @@ void Renderer::createDescriptorSet()
 	//TODO - how do we set this up for multiple uniforms in their own binding? multiple buffers? 
 #if PER_MATERIAL_UNIFORM_BUFFER
 
-	VkDeviceSize bufferSize = sizeof(glm::mat4) + sizeof(glm::vec4);
+	VkDeviceSize bufferSize = sizeof(glm::vec4);
 	vkh::CreateBuffer(uniformBuffer,
 		uniformBufferMemory,
 		bufferSize,
@@ -162,7 +175,7 @@ void Renderer::createDescriptorSet()
 	VkDescriptorBufferInfo bufferInfo = {};
 	bufferInfo.buffer = uniformBuffer;
 	bufferInfo.offset = 0;
-	bufferInfo.range = sizeof(glm::mat4);
+	bufferInfo.range = sizeof(glm::vec4);
 
 	//The configuration of descriptors is updated using the vkUpdateDescriptorSets function, which takes an array of VkWriteDescriptorSet structs as parameter.
 	VkWriteDescriptorSet descriptorWrite = {};
@@ -198,14 +211,14 @@ void Renderer::createDescriptorSetLayout()
 	colorLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 	colorLayoutBinding.pImmutableSamplers = nullptr; // Optional
 
-	VkDescriptorSetLayoutBinding bindings[] = { mvpLayoutBinding, colorLayoutBinding };
+	VkDescriptorSetLayoutBinding bindings[] = { /*mvpLayoutBinding,*/ colorLayoutBinding };
 
 	//a resource descriptor is a way for shaders to freely access resources like buffers and images
 	//to use our uniform data, we need to tell Vulkan about our descriptor
 
 	VkDescriptorSetLayoutCreateInfo layoutInfo = {};
 	layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	layoutInfo.bindingCount = 2;
+	layoutInfo.bindingCount = 1;
 	layoutInfo.pBindings = bindings;
 
 	VkResult res = vkCreateDescriptorSetLayout(context.lDevice.device, &layoutInfo, nullptr, &descriptorSetLayout);
