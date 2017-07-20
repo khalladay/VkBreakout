@@ -2,9 +2,7 @@
 #include "vkh.h"
 #include <vector>
 
-#define GLM_FORCE_RADIANS
-#include <glm/glm.hpp>
-#include <glm/gtx/transform.hpp>
+#include "stdafx.h"
 
 class Renderer
 {
@@ -24,7 +22,7 @@ private:
 	vkh::VkhContext context;
 	vkh::VkhMaterial blockMaterial;
 
-	//we don't have a camera, so we'll store the ortho matrix here
+	//we don't need a full camera object, so we'll store the ortho matrix here
 	glm::mat4 VIEW_PROJECTION;
 
 	VkRenderPass renderPass; //only 1 render pass for this application
@@ -32,25 +30,15 @@ private:
 
 	//the input layout for all shaders used
 	VkDescriptorSetLayout		descriptorSetLayout;
-
-
-	//three options: 
-	// 1 - 1 descriptorSet bound to 1 uniform buffer per Object (still have to map to update)
-	// 2 - single descriptorSet for whole material, 1 uniform buffer per object (have to updateDescriptorSet multiple times per frame, still have to map UBO)
-	// 3 - single descriptor set, single buffer, (have to map data into the reused buffer)
-	// which is faster? better? Let's start with #3
-
-
-#if PER_PRIMITIVE_DESCRIPTOR_SET
-#elif PER_MATERIAL_DESCRIPTOR_SET
 	VkDescriptorSet				descriptorSet;
-#endif
 
-#if PER_PRIMITIVE_UNIFORM_BUFFER
-#elif PER_MATERIAL_UNIFORM_BUFFER
+	//Because this application is simple enough, we use a single uniform buffer for the whole application
+	//We can choose between three different ways to use this buffer, for performance testing: 
+	//	1. Allocating a buffer large enough to hold just 1 object's uniforms, updating that buffer for each object with VkCmdUpdateBuffer
+	//  2. Allocating a buffer large enough to hold all objects' uniforms, and getting offsets into that buffer per primitive
+	//  3. Not using this buffer at all, and supplying the data using push constants. 
 	VkBuffer uniformBuffer;
 	VkDeviceMemory uniformBufferMemory;
-#endif
 
 	
 };

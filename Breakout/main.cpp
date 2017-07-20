@@ -3,10 +3,8 @@
 #include "Renderer.h"
 #include "Primitive.h"
 #include "Mesh.h"
+#include "stdafx.h"
 
-#define APP_NAME "Vulkan Breakout"
-#define SCREEN_W 1280
-#define SCREEN_H 720
 
 Renderer* renderer;
 Mesh* rectMesh;
@@ -23,9 +21,9 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE pInstance, LPSTR cmdLine, int
 
 	createMeshes();
 
-	paddlePrim.col = glm::vec4(1, 1, 0, 1);
-	paddlePrim.scale = glm::vec3(1, 1, 1);
-	paddlePrim.pos = glm::vec4(0.0, 0.5, 0.5, 0.5);
+	paddlePrim.col = glm::vec4(1, 0, 1, 1);
+	paddlePrim.scale = glm::vec3(100.f, 100.0f, 1.0f);
+	paddlePrim.pos = glm::vec4(-1000.0, 500.0, 0.0, 0.0);
 	paddlePrim.meshResource = rectMesh;
 
 	mainLoop();
@@ -36,15 +34,15 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE pInstance, LPSTR cmdLine, int
 void createMeshes()
 {
 	const std::vector<Mesh::Vertex> rectVerts = {
-		{{ 5.0f, 1.0f, 0.0f }},
-		{{ 0.0f, 1.0f, 0.0f }},
-		{{ 0.0f, 0.0f, 0.0f }},
-		{{ 5.0f, 0.0f, 0.0f }},
+		{{ 1.0f, 1.0f, 0.0f }},
+		{{ -1.0f, 1.0f, 0.0f }},
+		{{ -1.0f, -1.0f, 0.0f }},
+		{{ 1.0f, -1.0f, 0.0f }},
 	};
 
 	const std::vector<unsigned short> rectIndices =
 	{
-		0,1,2,1,2,3
+		0,1,2,2,3,0
 	};
 
 	rectMesh = new Mesh(rectVerts, rectIndices, renderer);

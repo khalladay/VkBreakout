@@ -10,8 +10,10 @@ Renderer::Renderer(uint32_t width, uint32_t height, HINSTANCE Instance, HWND wnd
 	createDescriptorSetLayout();
 	createDescriptorSet();
 	createPipelines();
-
-	VIEW_PROJECTION = glm::orthoLH(0, 1, 0, 1, -1, 10);
+	
+	float aspect = (float)SCREEN_W / (float)SCREEN_H;
+	float invAspect = (float)SCREEN_H / (float)SCREEN_W;
+	VIEW_PROJECTION = glm::ortho(-(float)SCREEN_W, (float)SCREEN_W, -(float)SCREEN_H, (float)SCREEN_H, -1.0f, 1.0f);
 }
 
 vkh::VkhContext& Renderer::GetVkContext()
@@ -21,19 +23,17 @@ vkh::VkhContext& Renderer::GetVkContext()
 
 void Renderer::draw(const class Primitive* blockPrims, const class Primitive* ballPrims, const class Primitive* paddlePrims)
 {
+	void* udata;
+	vkMapMemory(context.lDevice.device, uniformBufferMemory, 0, sizeof(PrimitiveUniformObject), 0, &udata);
+	PrimitiveUniformObject paddleUBO = paddlePrims[0].GetRenderPrimitiveUniformObject();
+	paddleUBO.model = VIEW_PROJECTION* paddleUBO.model;
+	memcpy(udata, &paddleUBO, sizeof(PrimitiveUniformObject));
+	vkUnmapMemory(context.lDevice.device, uniformBufferMemory);
+
 	VkResult res;
 
 	//acquire an image from the swap chain
 	uint32_t imageIndex;
-
-	
-
-	void* data;
-	vkMapMemory(context.lDevice.device, uniformBufferMemory, 0, sizeof(glm::vec4), 0, &data);
-	memcpy(data, &(paddlePrims[0].GetRenderPrimitive()).color, sizeof(glm::vec4));
-	vkUnmapMemory(context.lDevice.device, uniformBufferMemory);
-
-
 
 	//using uint64 max for timeout disables it
 	res = vkAcquireNextImageKHR(context.lDevice.device, context.swapChain.swapChain, UINT64_MAX, context.imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
@@ -142,7 +142,6 @@ void Renderer::draw(const class Primitive* blockPrims, const class Primitive* ba
 
 void Renderer::createDescriptorSet()
 {
-#if PER_MATERIAL_DESCRIPTOR_SET
 	VkResult res;
 
 	VkDescriptorSetLayout layouts[] = { descriptorSetLayout };
@@ -158,15 +157,15 @@ void Renderer::createDescriptorSet()
 
 	//our descriptor points to a uniform buffer, so it's configured with
 	//a VkDescriptorBufferInfo
+	
+#if USE_UNIFORM_BUFFER
+	VkDeviceSize bufferSize = sizeof(PrimitiveUniformObject) * 256;
+#endif
 
-	//TODO - how do we set this up for multiple uniforms in their own binding? multiple buffers? 
-#if PER_MATERIAL_UNIFORM_BUFFER
-
-	VkDeviceSize bufferSize = sizeof(glm::vec4);
 	vkh::CreateBuffer(uniformBuffer,
 		uniformBufferMemory,
 		bufferSize,
-		VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+		VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
 		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 		context.lDevice.device,
 		context.gpu.device);
@@ -175,7 +174,7 @@ void Renderer::createDescriptorSet()
 	VkDescriptorBufferInfo bufferInfo = {};
 	bufferInfo.buffer = uniformBuffer;
 	bufferInfo.offset = 0;
-	bufferInfo.range = sizeof(glm::vec4);
+	bufferInfo.range = sizeof(PrimitiveUniformObject);
 
 	//The configuration of descriptors is updated using the vkUpdateDescriptorSets function, which takes an array of VkWriteDescriptorSet structs as parameter.
 	VkWriteDescriptorSet descriptorWrite = {};
@@ -190,13 +189,11 @@ void Renderer::createDescriptorSet()
 	descriptorWrite.pTexelBufferView = nullptr; // Optional
 
 	vkUpdateDescriptorSets(context.lDevice.device, 1, &descriptorWrite, 0, nullptr);
-#endif
-
-#endif 
 }
 
 void Renderer::createDescriptorSetLayout()
 {
+	//we only need a single binding, since we're passing both our params in a single UBO 
 	VkDescriptorSetLayoutBinding mvpLayoutBinding = {};
 	mvpLayoutBinding.binding = 0;
 	mvpLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -204,14 +201,8 @@ void Renderer::createDescriptorSetLayout()
 	mvpLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 	mvpLayoutBinding.pImmutableSamplers = nullptr; // Optional
 
-	VkDescriptorSetLayoutBinding colorLayoutBinding = {};
-	colorLayoutBinding.binding = 1;
-	colorLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	colorLayoutBinding.descriptorCount = 1;
-	colorLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-	colorLayoutBinding.pImmutableSamplers = nullptr; // Optional
-
-	VkDescriptorSetLayoutBinding bindings[] = { /*mvpLayoutBinding,*/ colorLayoutBinding };
+	//different bindings NEED different uniform buffers. 
+	VkDescriptorSetLayoutBinding bindings[] = { mvpLayoutBinding };
 
 	//a resource descriptor is a way for shaders to freely access resources like buffers and images
 	//to use our uniform data, we need to tell Vulkan about our descriptor

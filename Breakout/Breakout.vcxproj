@@ -142,6 +142,7 @@
     <None Include="shaders\vertColorPassthrough.vert" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="stdafx.h" />
     <ClInclude Include="file_utils.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="os_support.h" />

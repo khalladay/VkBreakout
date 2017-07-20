@@ -338,6 +338,7 @@ namespace vkh
 		vkGetPhysicalDeviceFeatures(outDevice.device, &outDevice.features);
 		vkGetPhysicalDeviceMemoryProperties(outDevice.device, &outDevice.memProps);
 		vkGetPhysicalDeviceProperties(outDevice.device, &outDevice.deviceProps);
+		printf("Max mem allocations: %i\n", outDevice.deviceProps.limits.maxMemoryAllocationCount);
 
 		//get queue families while we're here
 		vkGetPhysicalDeviceQueueFamilyProperties(outDevice.device, &outDevice.queueFamilyCount, nullptr);

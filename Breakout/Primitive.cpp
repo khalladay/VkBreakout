@@ -1,9 +1,10 @@
 #include "Primitive.h"
 #include "Mesh.h"
+#include "vkh.h"
+#include "Renderer.h"
 
 Primitive::Primitive()
 {
-
 }
 
 Primitive::~Primitive()
@@ -11,9 +12,9 @@ Primitive::~Primitive()
 
 }
 
-RenderPrimitive Primitive::GetRenderPrimitive() const
+PrimitiveUniformObject Primitive::GetRenderPrimitiveUniformObject() const
 {
-	RenderPrimitive prim;
+	PrimitiveUniformObject prim;
 	prim.model = glm::translate(pos) * glm::scale(scale);
 	prim.color = col;
 	return prim;

@@ -4,6 +4,7 @@
 #include <vulkan/vk_sdk_platform.h>
 #include "file_utils.h"
 #include <vector>
+#include "stdafx.h"
 
 #define PER_MATERIAL_DESCRIPTOR_SET 1
 //#define PER_PRIMITIVE_DESCRIPTOR_SET 1
