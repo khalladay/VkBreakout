@@ -94,7 +94,7 @@ namespace vkh
 	void CreateCommandPool(VkCommandPool& outPool, const VkDevice& lDevice, const VkhPhysicalDevice& physDevice);
 	void CreateCommandBuffers(std::vector<VkCommandBuffer>& outBuffers, VkCommandPool& pool, uint32_t frameBufferCount, const VkDevice& lDevice);
 	void CreateSemaphone(VkSemaphore& outSemaphore, const VkDevice& device);
-	void CreateDescriptorPool(VkDescriptorPool& outPool, const VkDevice& device, uint32_t maxDescriptors);
+	void CreateDescriptorPool(VkDescriptorPool& outPool, const VkDevice& device, VkDescriptorType descriptorType, uint32_t maxDescriptors);
 	void DestroyDebugCallback(VkInstance instance);
 
 

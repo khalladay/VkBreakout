@@ -35,12 +35,7 @@ namespace vkh
 		CreateCommandPool(outContext.commandPool, outContext.lDevice.device, outContext.gpu);
 		CreateCommandBuffers(outContext.commandBuffers, outContext.commandPool, outContext.swapChain.imageViews.size(), outContext.lDevice.device);
 
-#if PER_PRIMITIVE_DESCRIPTOR_SET
-		CreateDescriptorPool(outContext.descriptorPool, outContext.lDevice.device, 100); //MAX_DESCRIPTORS
-
-#elif PER_MATERIAL_DESCRIPTOR_SET
-		CreateDescriptorPool(outContext.descriptorPool, outContext.lDevice.device, 5); //MAX_DESCRIPTORS
-#endif
+		CreateDescriptorPool(outContext.descriptorPool, outContext.lDevice.device, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 5); //MAX_DESCRIPTORS
 
 		outContext.frameFences = (VkFence*)malloc(sizeof(VkFence) * outContext.swapChain.imageViews.size());
 		for (int i = 0; i < outContext.swapChain.imageViews.size(); ++i)
@@ -858,10 +853,10 @@ namespace vkh
 
 	}
 
-	void CreateDescriptorPool(VkDescriptorPool& outPool, const VkDevice& device, uint32_t maxDescriptors)
+	void CreateDescriptorPool(VkDescriptorPool& outPool, const VkDevice& device, VkDescriptorType descriptorType, uint32_t maxDescriptors)
 	{
 		VkDescriptorPoolSize poolSize = {};
-		poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		poolSize.type = descriptorType;
 		poolSize.descriptorCount = maxDescriptors;
 
 		VkDescriptorPoolCreateInfo poolInfo = {};

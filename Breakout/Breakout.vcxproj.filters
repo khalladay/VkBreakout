@@ -16,15 +16,15 @@
     <Filter Include="shaders">
       <UniqueIdentifier>{e3488a94-595c-4c51-8077-ce6692d5b383}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Vulkan">
+      <UniqueIdentifier>{66e88ca8-4e50-4870-8ccd-033827649ffb}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="os_support.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="vkh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="file_utils.cpp">
@@ -37,6 +37,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Primitive.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="BreakoutGame.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="vkh.cpp">
+      <Filter>Source Files\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="MeshManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -55,9 +64,6 @@
     <ClInclude Include="os_support.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="vkh.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="file_utils.h">
       <Filter>Source Files</Filter>
     </ClInclude>
@@ -72,6 +78,15 @@
     </ClInclude>
     <ClInclude Include="stdafx.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BreakoutGame.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="vkh.h">
+      <Filter>Source Files\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="MeshManager.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

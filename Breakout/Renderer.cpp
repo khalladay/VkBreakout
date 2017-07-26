@@ -13,7 +13,9 @@ Renderer::Renderer(uint32_t width, uint32_t height, HINSTANCE Instance, HWND wnd
 	
 	float aspect = (float)SCREEN_W / (float)SCREEN_H;
 	float invAspect = (float)SCREEN_H / (float)SCREEN_W;
-	VIEW_PROJECTION = glm::ortho(-(float)SCREEN_W, (float)SCREEN_W, -(float)SCREEN_H, (float)SCREEN_H, -1.0f, 1.0f);
+	float screenDim = 100.0f * aspect;
+	float iscreenDim = 100.0f* invAspect;
+	VIEW_PROJECTION = glm::ortho(-(float)screenDim, (float)screenDim, -(float)100, (float)100, -1.0f, 1.0f);
 }
 
 vkh::VkhContext& Renderer::GetVkContext()
@@ -21,13 +23,17 @@ vkh::VkhContext& Renderer::GetVkContext()
 	return context;
 }
 
-void Renderer::draw(const class Primitive* blockPrims, const class Primitive* ballPrims, const class Primitive* paddlePrims)
+void Renderer::draw(const struct PrimitiveUniformObject* uniformData, const std::vector<class Mesh*> primMeshes)
 {
+	//max size of buffer we allocated
+	assert(primMeshes.size() < 256);
+
+	size_t uboAlignment = GetVkContext().gpu.deviceProps.limits.minUniformBufferOffsetAlignment;
+	size_t dynamicAlignment = (sizeof(PrimitiveUniformObject) / uboAlignment) * uboAlignment + ((sizeof(PrimitiveUniformObject) % uboAlignment) > 0 ? uboAlignment : 0);
+
 	void* udata;
-	vkMapMemory(context.lDevice.device, uniformBufferMemory, 0, sizeof(PrimitiveUniformObject), 0, &udata);
-	PrimitiveUniformObject paddleUBO = paddlePrims[0].GetRenderPrimitiveUniformObject();
-	paddleUBO.model = VIEW_PROJECTION* paddleUBO.model;
-	memcpy(udata, &paddleUBO, sizeof(PrimitiveUniformObject));
+	vkMapMemory(context.lDevice.device, uniformBufferMemory, 0, dynamicAlignment * primMeshes.size(), 0, &udata);
+	memcpy(udata, uniformData,  dynamicAlignment * primMeshes.size());
 	vkUnmapMemory(context.lDevice.device, uniformBufferMemory);
 
 	VkResult res;
@@ -82,15 +88,17 @@ void Renderer::draw(const class Primitive* blockPrims, const class Primitive* ba
 	vkCmdBeginRenderPass(context.commandBuffers[imageIndex], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
 	vkCmdBindPipeline(context.commandBuffers[imageIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, blockMaterial.gfxPipeline);
-	VkBuffer vertexBuffers[] = { paddlePrims[0].meshResource->vBuffer };
-	VkDeviceSize offsets[] = { 0 };
+	for (int i = 0; i < primMeshes.size(); ++i)
+	{
+		uint32_t dynamicOffset = i * static_cast<uint32_t>(dynamicAlignment);
+		VkBuffer vertexBuffers[] = { primMeshes[i]->vBuffer };
+		VkDeviceSize offsets[] = { 0 };
+		vkCmdBindDescriptorSets(context.commandBuffers[imageIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, blockMaterial.pipelineLayout, 0, 1, &descriptorSet, 1, &dynamicOffset);
 
-
-	vkCmdBindDescriptorSets(context.commandBuffers[imageIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, blockMaterial.pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
-
-	vkCmdBindVertexBuffers(context.commandBuffers[imageIndex], 0, 1, vertexBuffers, offsets);
-	vkCmdBindIndexBuffer(context.commandBuffers[imageIndex], paddlePrims[0].meshResource->indexBuffer, 0, VK_INDEX_TYPE_UINT16);
-	vkCmdDrawIndexed(context.commandBuffers[imageIndex], static_cast<uint32_t>(paddlePrims[0].meshResource->indexCount), 1, 0, 0, 0);
+		vkCmdBindVertexBuffers(context.commandBuffers[imageIndex], 0, 1, vertexBuffers, offsets);
+		vkCmdBindIndexBuffer(context.commandBuffers[imageIndex], primMeshes[i]->indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+		vkCmdDrawIndexed(context.commandBuffers[imageIndex], static_cast<uint32_t>(primMeshes[i]->indexCount), 1, 0, 0, 0);
+	}
 
 	vkCmdEndRenderPass(context.commandBuffers[imageIndex]);
 
@@ -137,7 +145,6 @@ void Renderer::draw(const class Primitive* blockPrims, const class Primitive* ba
 	{
 	//	handleScreenResize();  
 	}
-
 }
 
 void Renderer::createDescriptorSet()
@@ -157,15 +164,19 @@ void Renderer::createDescriptorSet()
 
 	//our descriptor points to a uniform buffer, so it's configured with
 	//a VkDescriptorBufferInfo
+
+	size_t uboAlignment = GetVkContext().gpu.deviceProps.limits.minUniformBufferOffsetAlignment;
+	size_t dynamicAlignment = (sizeof(PrimitiveUniformObject) / uboAlignment) * uboAlignment + ((sizeof(PrimitiveUniformObject) % uboAlignment) > 0 ? uboAlignment : 0);
+
 	
 #if USE_UNIFORM_BUFFER
-	VkDeviceSize bufferSize = sizeof(PrimitiveUniformObject) * 256;
+	VkDeviceSize bufferSize = dynamicAlignment * 256;
 #endif
 
 	vkh::CreateBuffer(uniformBuffer,
 		uniformBufferMemory,
 		bufferSize,
-		VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+		VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 		context.lDevice.device,
 		context.gpu.device);
@@ -182,7 +193,7 @@ void Renderer::createDescriptorSet()
 	descriptorWrite.dstSet = descriptorSet;
 	descriptorWrite.dstBinding = 0; //refers to binding in shader
 	descriptorWrite.dstArrayElement = 0;
-	descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
 	descriptorWrite.descriptorCount = 1;
 	descriptorWrite.pBufferInfo = &bufferInfo;
 	descriptorWrite.pImageInfo = nullptr; // Optional
@@ -196,7 +207,7 @@ void Renderer::createDescriptorSetLayout()
 	//we only need a single binding, since we're passing both our params in a single UBO 
 	VkDescriptorSetLayoutBinding mvpLayoutBinding = {};
 	mvpLayoutBinding.binding = 0;
-	mvpLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	mvpLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
 	mvpLayoutBinding.descriptorCount = 1;
 	mvpLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 	mvpLayoutBinding.pImmutableSamplers = nullptr; // Optional
