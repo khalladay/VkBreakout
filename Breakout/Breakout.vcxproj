@@ -71,8 +71,8 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>..\build\</OutDir>
     <IntDir>..\build\$(Platform)\$(Configuration)\</IntDir>
-    <IncludePath>W:\Vulkan\VkBreakout\deps;C:\VulkanSDK\1.0.46.0\Include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\VulkanSDK\1.0.46.0\Lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>W:\Vulkan\VkBreakout\deps;C:\VulkanSDK\1.0.54.0\Include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\VulkanSDK\1.0.54.0\Lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>..\build\</OutDir>

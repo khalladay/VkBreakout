@@ -18,11 +18,13 @@ BreakoutGame::BreakoutGame(Renderer* r)
 	PrimitiveManager::Get()->primitives[paddlePrimHdl].scale = glm::vec3(10,3,10);
 
 	//construct brick field
-	for (int i = 0; i < 10; ++i)
+	for (int i = 0; i < 50; ++i)
 	{
 		int b = PrimitiveManager::Get()->NewPrimitive(MeshManager::Get()->GetRectMesh(r));
-		glm::vec3 p = glm::vec3(-100 + (i %5) * 25, -20 + (i/5) * 10,0);
+		glm::vec3 p = glm::vec3(-110 + (i %10) * 25, -20 + (i/10) * 10,0);
 		PrimitiveManager::Get()->primitives[b].pos = p;
+		PrimitiveManager::Get()->primitives[b].col = glm::vec4( (i / 10) / 5.0f, (i%10) /10.0f, 1.0f, 1.0f);
+
 		PrimitiveManager::Get()->primitives[b].scale = glm::vec3(10, 3, 10);
 		brickPrimHdls.push_back(b);
 		brickPos.push_back(p);

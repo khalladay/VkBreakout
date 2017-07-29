@@ -48,10 +48,11 @@ void PrimitiveManager::SubmitPrimitives(Renderer* renderer)
 	if (!uniformData)
 	{
 		uniformData = (PrimitiveUniformObject*)_aligned_malloc(bufferSize, dynamicAlignment);
+		lastBufferSize = bufferSize;
 	}
 	else if (bufferSize != lastBufferSize)
 	{
-		_aligned_realloc(uniformData, bufferSize, dynamicAlignment);
+		uniformData = (PrimitiveUniformObject*)_aligned_realloc(uniformData, bufferSize, dynamicAlignment);
 		lastBufferSize = bufferSize;
 	}
 
@@ -64,10 +65,6 @@ void PrimitiveManager::SubmitPrimitives(Renderer* renderer)
 		
 		char* uniformChar = (char*)uniformData;
 		memcpy(&uniformChar[i * dynamicAlignment], &puo, sizeof(PrimitiveUniformObject));
-//		uniformChar[i * dynamicAlignment]
-
-
-		//uniformData[i] = (puo);
 	}
 
 	renderer->draw(uniformData, primitiveMeshes);

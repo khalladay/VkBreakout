@@ -2,6 +2,7 @@
 #include "stdafx.h"
 #include <vector>
 
+
 struct PrimitiveUniformObject
 {
 	glm::mat4 model;

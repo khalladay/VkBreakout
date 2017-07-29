@@ -5,7 +5,7 @@
 
 BinaryBuffer* loadBinaryFile(const char* filepath)
 {
-	BinaryBuffer* outBlob = (BinaryBuffer*)malloc(sizeof(BinaryBuffer));
+	BinaryBuffer* outBlob = new BinaryBuffer(); // (BinaryBuffer*)malloc(sizeof(BinaryBuffer));
 
 	std::ifstream file(filepath, std::ios::ate | std::ios::binary);
 	assert(file.is_open());

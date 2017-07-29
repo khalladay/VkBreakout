@@ -37,7 +37,7 @@ namespace vkh
 
 		CreateDescriptorPool(outContext.descriptorPool, outContext.lDevice.device, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 5); //MAX_DESCRIPTORS
 
-		outContext.frameFences = (VkFence*)malloc(sizeof(VkFence) * outContext.swapChain.imageViews.size());
+		outContext.frameFences = new VkFence[outContext.swapChain.imageViews.size()];// (VkFence*)malloc(sizeof(VkFence) * outContext.swapChain.imageViews.size());
 		for (int i = 0; i < outContext.swapChain.imageViews.size(); ++i)
 		{
 			VkFenceCreateInfo fenceInfo = {};
@@ -77,6 +77,8 @@ namespace vkh
 		const bool enableValidationLayers = true;
 
 		validationLayers.push_back("VK_LAYER_LUNARG_standard_validation");
+
+
 		layersAvailable.push_back(false);
 
 		uint32_t layerCount;
@@ -195,6 +197,8 @@ namespace vkh
 
 		if (enableValidationLayers)
 		{
+
+
 			VkDebugReportCallbackCreateInfoEXT createInfo = {};
 			createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;
 			createInfo.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT;
@@ -202,6 +206,8 @@ namespace vkh
 
 			PFN_vkCreateDebugReportCallbackEXT CreateDebugReportCallback = VK_NULL_HANDLE;
 			CreateDebugReportCallback = (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(outInstance, "vkCreateDebugReportCallbackEXT");
+
+		//	PFN_vkDebugReportMessageEXT vkDebugReportMessageEXT = reinterpret_cast<PFN_vkDebugReportMessageEXT> (vkGetInstanceProcAddr(instance, "vkDebugReportMessageEXT"));
 
 			CreateDebugReportCallback(outInstance, &createInfo, NULL, &callback);
 		}
@@ -431,7 +437,7 @@ namespace vkh
 		const bool enableValidationLayers = false;
 #else
 		const bool enableValidationLayers = true;
-		validationLayers.push_back("VK_LAYER_LUNARG_standard_validation");
+	//	validationLayers.push_back("VK_LAYER_LUNARG_standard_validation");
 
 		//don't do anything else here because we already know the validation layer is available, 
 		//else we would have asserted earlier
@@ -631,7 +637,7 @@ namespace vkh
 	{
 		BinaryBuffer* data = loadBinaryFile(filepath);
 		vkh::CreateShaderModule(outModule, *data, lDevice);
-		free(data);
+		delete data;
 	}
 
 	void CreateShaderModule(VkShaderModule& outModule, const BinaryBuffer& binaryData, const VkDevice& lDevice)
@@ -907,6 +913,7 @@ namespace vkh
 			vkDestroyImageView(context.lDevice.device, context.swapChain.imageViews[i], nullptr);
 		}
 
+		delete[] context.frameFences;
 
 		vkDestroySwapchainKHR(context.lDevice.device, context.swapChain.swapChain, nullptr);
 

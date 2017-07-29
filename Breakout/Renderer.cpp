@@ -31,10 +31,17 @@ void Renderer::draw(const struct PrimitiveUniformObject* uniformData, const std:
 	size_t uboAlignment = GetVkContext().gpu.deviceProps.limits.minUniformBufferOffsetAlignment;
 	size_t dynamicAlignment = (sizeof(PrimitiveUniformObject) / uboAlignment) * uboAlignment + ((sizeof(PrimitiveUniformObject) % uboAlignment) > 0 ? uboAlignment : 0);
 
-	void* udata;
-	vkMapMemory(context.lDevice.device, uniformBufferMemory, 0, dynamicAlignment * primMeshes.size(), 0, &udata);
+	static void* udata = nullptr;
+	if (!udata)
+	{
+	//	vkMapMemory(context.lDevice.device, uniformBufferMemory, 0, dynamicAlignment * primMeshes.size(), 0, &udata);
+
+	}
+		vkMapMemory(context.lDevice.device, uniformBufferMemory, 0, dynamicAlignment * primMeshes.size(), 0, &udata);
+
 	memcpy(udata, uniformData,  dynamicAlignment * primMeshes.size());
 	vkUnmapMemory(context.lDevice.device, uniformBufferMemory);
+	//udata = nullptr;
 
 	VkResult res;
 
@@ -43,7 +50,7 @@ void Renderer::draw(const struct PrimitiveUniformObject* uniformData, const std:
 
 	//using uint64 max for timeout disables it
 	res = vkAcquireNextImageKHR(context.lDevice.device, context.swapChain.swapChain, UINT64_MAX, context.imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
-
+	
 	if (context.frameFences[imageIndex])
 	{
 		// Fence should be unsignaled
@@ -139,7 +146,7 @@ void Renderer::draw(const struct PrimitiveUniformObject* uniformData, const std:
 	presentInfo.pSwapchains = swapChains;
 	presentInfo.pImageIndices = &imageIndex;
 	presentInfo.pResults = nullptr; // Optional
-	res = vkQueuePresentKHR(context.lDevice.presentQueue, &presentInfo);
+	res = vkQueuePresentKHR(context.lDevice.transferQueue, &presentInfo);
 
 	if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR)
 	{
@@ -185,7 +192,7 @@ void Renderer::createDescriptorSet()
 	VkDescriptorBufferInfo bufferInfo = {};
 	bufferInfo.buffer = uniformBuffer;
 	bufferInfo.offset = 0;
-	bufferInfo.range = sizeof(PrimitiveUniformObject);
+	bufferInfo.range = dynamicAlignment;
 
 	//The configuration of descriptors is updated using the vkUpdateDescriptorSets function, which takes an array of VkWriteDescriptorSet structs as parameter.
 	VkWriteDescriptorSet descriptorWrite = {};
