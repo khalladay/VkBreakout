@@ -1,5 +1,6 @@
 #include "os_support.h"
 #include <stdio.h>
+#include <timeapi.h>
 
 #define DIRECTINPUT_VERSION 0x0800
 #include <dinput.h>
@@ -271,3 +272,7 @@ void HandleOSEvents()
 	}
 }
 
+double GetTime()
+{
+	return (double)timeGetTime() / 10000.0f;
+}

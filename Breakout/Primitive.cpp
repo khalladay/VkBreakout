@@ -3,21 +3,25 @@
 #include "vkh.h"
 #include "Renderer.h"
 
-Primitive::Primitive()
+
+void SetPrimPos(int primHdl, glm::vec3 position)
 {
+	PrimitiveManager::Get()->primitives[primHdl].pos = position;
 }
 
-Primitive::~Primitive()
+void TranslatePrim(int primHdl, glm::vec3 translation)
 {
-
+	PrimitiveManager::Get()->primitives[primHdl].pos += translation;
 }
 
-PrimitiveUniformObject Primitive::GetRenderPrimitiveUniformObject() const
+void SetPrimCol(int primHdl, glm::vec4 col)
 {
-	PrimitiveUniformObject prim;
-	prim.model = glm::translate(pos) * glm::scale(scale);
-	prim.color = col;
-	return prim;
+	PrimitiveManager::Get()->primitives[primHdl].col = col;
+
+}
+void SetPrimScale(int primHdl, glm::vec3 scale)
+{
+	PrimitiveManager::Get()->primitives[primHdl].scale = scale;
 }
 
 PrimitiveManager* PrimitiveManager::Get()
@@ -33,7 +37,8 @@ PrimitiveManager* PrimitiveManager::Get()
 
 void PrimitiveManager::DestroyPrimitive(int handle)
 {
-	primitives[handle].alive = 0;
+	primitives.erase(handle);
+	primitiveMeshes.erase(handle);
 }
 
 void PrimitiveManager::SubmitPrimitives(Renderer* renderer)
@@ -50,53 +55,47 @@ void PrimitiveManager::SubmitPrimitives(Renderer* renderer)
 		uniformData = (PrimitiveUniformObject*)_aligned_malloc(bufferSize, dynamicAlignment);
 		lastBufferSize = bufferSize;
 	}
-	else if (bufferSize != lastBufferSize)
+	else if (bufferSize > lastBufferSize)
 	{
 		uniformData = (PrimitiveUniformObject*)_aligned_realloc(uniformData, bufferSize, dynamicAlignment);
 		lastBufferSize = bufferSize;
 	}
 
+	std::vector<Mesh*> meshes;
 
-	for (int i = 0; i < primitives.size(); ++i)
+	int idx = 0;
+	char* uniformChar = (char*)uniformData;
+
+	for (const auto& prim : primitives)
 	{
 		PrimitiveUniformObject puo;
-		puo.model = renderer->VIEW_PROJECTION * (glm::translate(primitives[i].pos) * glm::scale(primitives[i].scale));
-		puo.color = primitives[i].col;
+		puo.model = renderer->VIEW_PROJECTION * (glm::translate(prim.second.pos) * glm::scale(prim.second.scale));
+		puo.color = prim.second.col;
+
+		memcpy(&uniformChar[idx * dynamicAlignment], &puo, sizeof(PrimitiveUniformObject));
+		idx++;
 		
-		char* uniformChar = (char*)uniformData;
-		memcpy(&uniformChar[i * dynamicAlignment], &puo, sizeof(PrimitiveUniformObject));
+		meshes.push_back(primitiveMeshes[prim.first]);
 	}
 
-	renderer->draw(uniformData, primitiveMeshes);
+	renderer->draw(uniformData, meshes);
 }
 
 
 int PrimitiveManager::NewPrimitive(Mesh* meshResource)
 {
-	for (int i = 0; i < primitives.size(); ++i)
-	{
-		if (primitives[i].alive == 0)
-		{
-			primitives[i].alive = 1;
-			primitives[i].col = glm::vec4(1, 0, 0, 0);
-			primitives[i].pos = glm::vec3(0, 0, 0);
-			primitives[i].scale = glm::vec3(1, 1, 1);
+	static int next_prim_id = 0;
 
-			primitiveMeshes[i] = meshResource;
-			return i;
-		}
-	}
-
-	Primitive p;
-	p.alive = 1;
-	p.col = glm::vec4(1, 0, 0, 0);
+	PrimitiveManager::Primitive p;
+	p.col = glm::vec4(1, 1, 1, 1);
 	p.pos = glm::vec3(0, 0, 0);
 	p.scale = glm::vec3(1, 1, 1);
 
-	primitives.push_back(p);
-	primitiveMeshes.push_back(meshResource);
+	primitives.emplace(next_prim_id, p);
+	primitiveMeshes.emplace(next_prim_id, meshResource);
 
-	return primitives.size() - 1;
+	next_prim_id++;
+	return next_prim_id - 1;
 }
 
 PrimitiveManager::PrimitiveManager()

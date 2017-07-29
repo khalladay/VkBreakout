@@ -1,20 +1,13 @@
 #include <stdio.h>
 #include "os_support.h"
 #include "Renderer.h"
-#include "Primitive.h"
-#include "Mesh.h"
 #include "stdafx.h"
 #include "BreakoutGame.h"
 
 Renderer* renderer;
-Mesh* rectMesh;
-
-Primitive paddlePrim;
-
 BreakoutGame* game;
 
 void mainLoop();
-void createMeshes();
 
 int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE pInstance, LPSTR cmdLine, int showCode)
 {
@@ -30,9 +23,14 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE pInstance, LPSTR cmdLine, int
 void mainLoop()
 {
 	bool running = true;
+	double lastFrame = GetTime();
 
 	while (running)
 	{
+		double thisFrameTime = GetTime();
+		double deltaTime = thisFrameTime - lastFrame;
+		lastFrame = thisFrameTime;
+
 		HandleOSEvents();
 
 		if (GetKey(KEY_ESCAPE))
@@ -40,7 +38,7 @@ void mainLoop()
 			running = false;
 		}
 
-		game->tick(1.0f);
+		game->tick(deltaTime);
 		game->draw();
 	}
 }

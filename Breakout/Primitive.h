@@ -1,6 +1,6 @@
 #pragma once
 #include "stdafx.h"
-#include <vector>
+#include <map>
 
 
 struct PrimitiveUniformObject
@@ -9,24 +9,6 @@ struct PrimitiveUniformObject
 	glm::vec4 color;
 };
 
-
-class Primitive
-{
-public:
-	Primitive();
-	~Primitive();
-
-	PrimitiveUniformObject GetRenderPrimitiveUniformObject() const;
-
-	glm::vec3 pos;
-	glm::vec4 col;
-	glm::vec3 scale;
-	class Mesh* meshResource;
-
-
-private:
-	PrimitiveUniformObject renderPrim;
-};
 
 class PrimitiveManager
 {
@@ -42,19 +24,24 @@ public:
 public:
 	struct Primitive
 	{
-		int alive;
 		glm::vec3 pos;
 		glm::vec3 scale;
 		glm::vec4 col;
 	};
 
-	std::vector<Primitive> primitives;
-	std::vector<Mesh*> primitiveMeshes;
-	//std::vector<PrimitiveUniformObject> uniformData;
+	std::map<int, Primitive> primitives;
+	std::map<int, Mesh*> primitiveMeshes;
 
+	//std::vector<Primitive> primitives;
+	//std::vector<Mesh*> primitiveMeshes;
 	PrimitiveUniformObject* uniformData;
 
 private:
 	PrimitiveManager();
 	~PrimitiveManager();
 };
+
+void SetPrimPos(int primHdl, glm::vec3 position);
+void TranslatePrim(int primHdl, glm::vec3 translation);
+void SetPrimCol(int primHdl, glm::vec4 col);
+void SetPrimScale(int primHdl, glm::vec3 scale);

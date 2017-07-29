@@ -1,6 +1,5 @@
 #pragma once
 #include "stdafx.h"
-#include <vector>
 //game logic only. not responsible for loading assets, creating meshes, etc. 
 //only responsible for consuming them, and passing along data to the renderer
 
@@ -19,15 +18,14 @@ public:
 	Renderer* renderer;
 
 private:
+	int numBricks;
+
 	glm::vec3 paddlePos;
-	glm::vec2 paddleVel;
-	glm::vec2 ballPos;
-	glm::vec2 ballVel;
-	float ballRad;
+	glm::vec3 ballPos;
+	glm::vec3 ballVel;
 
 	int paddlePrimHdl;
 	int ballPrimHdl;
 
-	std::vector<int> brickPrimHdls;
-	std::vector<glm::vec2> brickPos;
+	int* brickPrimHdls;
 };

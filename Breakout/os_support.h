@@ -99,3 +99,4 @@ int GetMouseY();
 
 void Shutdown();
 
+double GetTime();
