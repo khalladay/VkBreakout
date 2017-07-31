@@ -7,6 +7,8 @@
 #define NOMINMAX
 #include <Windows.h>
 
+#include <functional>
+
 enum KeyCode
 {
 	KEY_ESCAPE = 0x01,
@@ -88,7 +90,7 @@ enum KeyCode
 HWND makeWindow(HINSTANCE Instance, const char* title, UINT width, UINT height);
 void HandleOSEvents();
 
-void setResizeCallback(void(*func)());
+void setResizeCallback(std::function<void(void)> callback);
 void PollInput();
 
 bool GetKey(KeyCode key);

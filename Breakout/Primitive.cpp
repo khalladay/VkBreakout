@@ -37,6 +37,7 @@ PrimitiveManager* PrimitiveManager::Get()
 
 void PrimitiveManager::DestroyPrimitive(int handle)
 {
+
 	primitives.erase(handle);
 	primitiveMeshes.erase(handle);
 }

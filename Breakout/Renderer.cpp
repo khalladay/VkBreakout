@@ -1,26 +1,52 @@
 #include "Renderer.h"
 #include "Primitive.h"
 #include "Mesh.h"
+#include "os_support.h"
+
+HWND window;
 
 Renderer::Renderer(uint32_t width, uint32_t height, HINSTANCE Instance, HWND wndHdl, const char* applicationName)
 {
+	window = wndHdl;
 	vkh::CreateWin32Context(context, width, height, Instance, wndHdl, applicationName);
 	vkh::CreateColorOnlyRenderPass(renderPass, context.swapChain, context.lDevice.device);
 	vkh::CreateFramebuffers(swapChainFramebuffers, context.swapChain, renderPass, context.lDevice.device);
 	createDescriptorSetLayout();
 	createDescriptorSet();
 	createPipelines();
-	
+
+	setResizeCallback(std::bind(&Renderer::handleScreenResize, this));
+
 	float aspect = (float)SCREEN_W / (float)SCREEN_H;
 	float invAspect = (float)SCREEN_H / (float)SCREEN_W;
 	float screenDim = 100.0f * aspect;
 	float iscreenDim = 100.0f* invAspect;
+	screenW = screenDim;
+	screenH = 100;
 	VIEW_PROJECTION = glm::ortho(-(float)screenDim, (float)screenDim, -(float)100, (float)100, -1.0f, 1.0f);
 }
 
 vkh::VkhContext& Renderer::GetVkContext()
 {
 	return context;
+}
+
+void Renderer::handleScreenResize()
+{
+	RECT rect;
+	GetWindowRect(window, &rect);
+
+	int w = rect.right - rect.left;
+	int h = rect.bottom - rect.top;
+	screenW = w;
+	float aspect = (float)w/ (float)h;
+	float invAspect = (float)h / (float)w;
+	float screenDim = 100.0f * aspect;
+	float iscreenDim = 100.0f* invAspect;
+	screenW = screenDim;
+	screenH = 100;
+	VIEW_PROJECTION = glm::ortho(-(float)screenDim, (float)screenDim, -(float)100, (float)100, -1.0f, 1.0f);
+
 }
 
 void Renderer::draw(const struct PrimitiveUniformObject* uniformData, const std::vector<class Mesh*> primMeshes)
@@ -37,8 +63,7 @@ void Renderer::draw(const struct PrimitiveUniformObject* uniformData, const std:
 	//	vkMapMemory(context.lDevice.device, uniformBufferMemory, 0, dynamicAlignment * primMeshes.size(), 0, &udata);
 
 	}
-		vkMapMemory(context.lDevice.device, uniformBufferMemory, 0, dynamicAlignment * primMeshes.size(), 0, &udata);
-
+	vkMapMemory(context.lDevice.device, uniformBufferMemory, 0, dynamicAlignment * primMeshes.size(), 0, &udata);
 	memcpy(udata, uniformData,  dynamicAlignment * primMeshes.size());
 	vkUnmapMemory(context.lDevice.device, uniformBufferMemory);
 	//udata = nullptr;
@@ -63,7 +88,7 @@ void Renderer::draw(const struct PrimitiveUniformObject* uniformData, const std:
 
 	if (res == VK_ERROR_OUT_OF_DATE_KHR)
 	{
-//		handleScreenResize();
+		handleScreenResize();
 		return;
 	}
 	else
@@ -150,7 +175,7 @@ void Renderer::draw(const struct PrimitiveUniformObject* uniformData, const std:
 
 	if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR)
 	{
-	//	handleScreenResize();  
+		handleScreenResize();  
 	}
 }
 

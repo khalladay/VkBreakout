@@ -15,6 +15,9 @@ public:
 
 	//we don't need a full camera object, so we'll store the ortho matrix here
 	glm::mat4 VIEW_PROJECTION;
+	int screenW;
+	int screenH;
+	void handleScreenResize();
 
 private:
 	void createPipelines();

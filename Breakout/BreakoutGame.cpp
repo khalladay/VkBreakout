@@ -9,13 +9,15 @@
 BreakoutGame::BreakoutGame(Renderer* r)
 {
 	numBricks = 50;
-
-	paddlePos = glm::vec3(0, 85,0);
-	ballPos = glm::vec3(0, 49,0);
+	borderWidth = 0.0f;
+	paddlePos = glm::vec3(0, r->screenH *0.8f ,0);
+	paddleScale = glm::vec3(10, 3, 10);
+	ballPos = glm::vec3(0, r->screenH * 0.5,0);
 	ballVel = glm::normalize(glm::vec3(0.5, -1, 0));
 	renderer = r;
 	brickPrimHdls = new int[numBricks];
 	memset(brickPrimHdls, -1, sizeof(int) * numBricks);
+
 
 	paddlePrimHdl = PrimitiveManager::Get()->NewPrimitive(MeshManager::Get()->GetRectMesh(r));
 	ballPrimHdl = PrimitiveManager::Get()->NewPrimitive(MeshManager::Get()->GetCircleMesh(r));
@@ -24,7 +26,7 @@ BreakoutGame::BreakoutGame(Renderer* r)
 	SetPrimScale(ballPrimHdl, glm::vec3(3, 3, 3));
 
 	SetPrimPos(paddlePrimHdl, paddlePos);
-	SetPrimScale(paddlePrimHdl, glm::vec3(10, 3, 10));
+	SetPrimScale(paddlePrimHdl, paddleScale);
 
 	//construct brick field
 	for (int i = 0; i < numBricks; ++i)
@@ -41,6 +43,17 @@ BreakoutGame::BreakoutGame(Renderer* r)
 
 BreakoutGame::~BreakoutGame()
 {
+	for (int i = 0; i < numBricks; ++i)
+	{
+		if (brickPrimHdls[i] > -1)
+		{
+			PrimitiveManager::Get()->DestroyPrimitive(brickPrimHdls[i]);
+		}
+	}
+	PrimitiveManager::Get()->DestroyPrimitive(paddlePrimHdl);
+	PrimitiveManager::Get()->DestroyPrimitive(ballPrimHdl);
+
+	delete[] brickPrimHdls;
 
 }
 
@@ -77,41 +90,44 @@ void BreakoutGame::tick(float deltaTime)
 {
 	if (GetKey(KeyCode::KEY_LEFT))
 	{
-		paddlePos -= glm::vec3(1, 0, 0);
-		paddlePos.x = paddlePos.x < -110 ? -110 : paddlePos.x;
+		paddlePos -= glm::vec3(0.5, 0, 0);
+		paddlePos.x = paddlePos.x < -renderer->screenW+paddleScale.x ? -renderer->screenW+paddleScale.x : paddlePos.x;
 		SetPrimPos(paddlePrimHdl, paddlePos);
 	}
 
 	if (GetKey(KeyCode::KEY_RIGHT))
 	{
-		paddlePos += glm::vec3(1, 0, 0);
-		paddlePos.x = paddlePos.x > 110 ? 110 : paddlePos.x;
+		paddlePos += glm::vec3(0.5, 0, 0);
+		paddlePos.x = (paddlePos.x) > renderer->screenW-paddleScale.x ? renderer->screenW-paddleScale.x : paddlePos.x;
 		SetPrimPos(paddlePrimHdl, paddlePos);
 	}
 
-	ballPos += ballVel * deltaTime * 1000.0f;
+	glm::vec3 frameVel = ballVel * deltaTime * 1000.0f;
+	ballPos += frameVel;
 
-	if (ballPos.y <= -100)
+	if (ballPos.y <= -renderer->screenH + 1)
 	{
-		ballPos -= ballVel * deltaTime * 1000.0f;
+		ballPos -= frameVel;
 		ballVel.y *= -1;
 	}
 	
-	if (ballPos.y >= 100)
+	if (ballPos.y >= renderer->screenH - 1)
 	{
-		ballPos -= ballVel * deltaTime * 1000.0f;
+		ballPos -= frameVel;
 		ballVel.y *= -1;
+		gameOver = true;
+
 	}
 	
-	if (ballPos.x >= 130)
+	if (ballPos.x >= renderer->screenW - borderWidth -1)
 	{
-		ballPos -= ballVel * deltaTime * 1000.0f;
+		ballPos -= frameVel;
 		ballVel.x *= -1;
 	}
 
-	if (ballPos.x <= -130)
+	if (ballPos.x <= -renderer->screenW + 1 + borderWidth)
 	{
-		ballPos -= ballVel * deltaTime * 1000.0f;
+		ballPos -= frameVel;
 		ballVel.x *= -1;
 	}
 
@@ -119,16 +135,28 @@ void BreakoutGame::tick(float deltaTime)
 	{
 		if (brickPrimHdls[i] > -1 && BallIntersectsRect(brickPrimHdls[i], ballPos))
 		{
+			glm::vec3 brickPos = PrimitiveManager::Get()->primitives[brickPrimHdls[i]].pos;
+			glm::vec3 brickScale = PrimitiveManager::Get()->primitives[brickPrimHdls[i]].scale;
+			
+			ballPos -= ballVel * 0.5f;
+			while (BallIntersectsRect(brickPrimHdls[i], ballPos))
+			{
+				ballPos -= ballVel * 0.5f;
+			}
+			SetPrimPos(ballPrimHdl, ballPos);
+			
+			ballVel.y *= -1;
+			
 			PrimitiveManager::Get()->DestroyPrimitive(brickPrimHdls[i]);
 			brickPrimHdls[i] = -1;
-			ballVel *= -1;
 		}
 	}
 
 	if (BallIntersectsRect(paddlePrimHdl, ballPos))
 	{
-		ballPos -= ballVel * deltaTime * 1000.0f;
-		ballVel *= -1;
+		ballPos -= frameVel;
+		SetPrimPos(ballPrimHdl, ballPos);
+		ballVel.y *= -1;
 	}
 
 	SetPrimPos(ballPrimHdl, ballPos);
@@ -143,11 +171,14 @@ void BreakoutGame::draw() const
 
 bool BreakoutGame::isGameOver() const
 {
+	if (gameOver) return true;
+
 	for (int i = 0; i < numBricks; ++i)
 	{
-		if (brickPrimHdls[i] > -1) return true;
+		if (brickPrimHdls[i] > -1) return false;
 	}
-	return false;
+
+	return true;
 }
 
 void BreakoutGame::restart()

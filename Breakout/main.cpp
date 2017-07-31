@@ -15,6 +15,7 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE pInstance, LPSTR cmdLine, int
 	renderer = new Renderer(SCREEN_W, SCREEN_H, Instance, wndHdl, APP_NAME);
 	game = new BreakoutGame(renderer);
 
+
 	mainLoop();
 
 	return 0;
@@ -36,6 +37,12 @@ void mainLoop()
 		if (GetKey(KEY_ESCAPE))
 		{
 			running = false;
+		}
+
+		if (game->isGameOver())
+		{
+			delete game;;
+			game = new BreakoutGame(renderer);
 		}
 
 		game->tick(deltaTime);

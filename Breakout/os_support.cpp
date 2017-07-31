@@ -79,8 +79,8 @@ void InitializeInputForWindow(HINSTANCE instance, HWND wndHdl, int width, int he
 	result = GInputState.diMouse->SetDataFormat(&c_dfDIMouse);
 	checkhf(result, "Failed to set data format for DirectInput mouse");
 
-	result = GInputState.diMouse->SetCooperativeLevel(wndHdl, DISCL_FOREGROUND | DISCL_EXCLUSIVE);
-	checkhf(result, "Failed to get exclusive access to DirectInput mouse");
+	//result = GInputState.diMouse->SetCooperativeLevel(wndHdl, DISCL_FOREGROUND | DISCL_EXCLUSIVE);
+	//checkhf(result, "Failed to get exclusive access to DirectInput mouse");
 
 	// Acquire the mouse.
 	result = GInputState.diMouse->Acquire();
@@ -190,11 +190,11 @@ void Shutdown()
 
 //Windowing
 
-void(*resizeCallback)();
+std::function<void(void)> resizeCB;
 
-void setResizeCallback(void(*func)())
+void setResizeCallback(std::function<void(void)> callback)
 {
-	resizeCallback = func;
+	resizeCB = callback;
 }
 
 
@@ -209,9 +209,9 @@ LRESULT CALLBACK DefaultWndFunc(HWND window, UINT message, WPARAM wParam, LPARAM
 	}break;
 	case WM_SIZE:
 	{
-		if (resizeCallback)
+		if (resizeCB)
 		{
-			resizeCallback();
+			resizeCB();
 		}
 	}
 	default:
