@@ -6,38 +6,54 @@
 #include "MeshManager.h"
 #include "os_support.h"
 
-BreakoutGame::BreakoutGame(Renderer* r)
+float clamp(float a, float min, float max)
 {
-	numBricks = 50;
-	borderWidth = 0.0f;
-	paddlePos = glm::vec3(0, r->screenH *0.8f ,0);
-	paddleScale = glm::vec3(10, 3, 10);
-	ballPos = glm::vec3(0, r->screenH * 0.5,0);
-	ballVel = glm::normalize(glm::vec3(0.5, -1, 0));
-	renderer = r;
-	brickPrimHdls = new int[numBricks];
-	memset(brickPrimHdls, -1, sizeof(int) * numBricks);
+	return a < min ? min : (a > max ? max : a);
+}
 
+BreakoutGame::BreakoutGame(Renderer* r)
+	: renderer(r)
+{
+	//setup game config
+	{
+		numBricks = 50;
+		borderWidth = 0.0f;
 
-	paddlePrimHdl = PrimitiveManager::Get()->NewPrimitive(MeshManager::Get()->GetRectMesh(r));
-	ballPrimHdl = PrimitiveManager::Get()->NewPrimitive(MeshManager::Get()->GetCircleMesh(r));
+		paddlePos = glm::vec3(0, r->screenH *0.8f, 0);
+		paddleScale = glm::vec3(10, 1, 10);
 
-	SetPrimPos(ballPrimHdl, ballPos);
-	SetPrimScale(ballPrimHdl, glm::vec3(3, 3, 3));
+		ballPos = glm::vec3(0, r->screenH * 0.5, 0);
+		ballVel = glm::normalize(glm::vec3(0.5, -1, 0));
+		ballRad = 1.5f;
+	}
 
-	SetPrimPos(paddlePrimHdl, paddlePos);
-	SetPrimScale(paddlePrimHdl, paddleScale);
+	//paddle/ball initialization
+	{
+		paddlePrimHdl = PM->NewPrimitive(MeshManager::Get()->GetRectMesh(r));
+		ballPrimHdl = PM->NewPrimitive(MeshManager::Get()->GetCircleMesh(r));
+
+		PM->SetPrimPos(ballPrimHdl, ballPos);
+		PM->SetPrimScale(ballPrimHdl, glm::vec3(ballRad * 2, ballRad * 2, ballRad * 2));
+
+		PM->SetPrimPos(paddlePrimHdl, paddlePos);
+		PM->SetPrimScale(paddlePrimHdl, paddleScale);
+	}
 
 	//construct brick field
-	for (int i = 0; i < numBricks; ++i)
 	{
-		int b = PrimitiveManager::Get()->NewPrimitive(MeshManager::Get()->GetRectMesh(r));
-		glm::vec3 p = glm::vec3(-110 + (i %10) * 25, -50 + (i/10) * 10,0);
+		brickPrimHdls = new int[numBricks];
+		memset(brickPrimHdls, -1, sizeof(int) * numBricks);
 
-		SetPrimPos(b, p);
-		SetPrimCol(b, glm::vec4((i / 10) / 5.0f, (i % 10) / 10.0f, 1.0f, 1.0f));
-		SetPrimScale(b, glm::vec3(10, 3, 10));
-		brickPrimHdls[i] = b;
+		for (int i = 0; i < numBricks; ++i)
+		{
+			int b = PM->NewPrimitive(MeshManager::Get()->GetRectMesh(r));
+			glm::vec3 p = glm::vec3(-110 + (i % 10) * 25, -50 + (i / 10) * 10, 0);
+
+			PM->SetPrimPos(b, p);
+			PM->SetPrimCol(b, glm::vec4((i / 10) / 5.0f, (i % 10) / 10.0f, 1.0f, 1.0f));
+			PM->SetPrimScale(b, glm::vec3(10, 3, 10));
+			brickPrimHdls[i] = b;
+		}
 	}
 }
 
@@ -47,25 +63,20 @@ BreakoutGame::~BreakoutGame()
 	{
 		if (brickPrimHdls[i] > -1)
 		{
-			PrimitiveManager::Get()->DestroyPrimitive(brickPrimHdls[i]);
+			PM->DestroyPrimitive(brickPrimHdls[i]);
 		}
 	}
-	PrimitiveManager::Get()->DestroyPrimitive(paddlePrimHdl);
-	PrimitiveManager::Get()->DestroyPrimitive(ballPrimHdl);
+	PM->DestroyPrimitive(paddlePrimHdl);
+	PM->DestroyPrimitive(ballPrimHdl);
 
 	delete[] brickPrimHdls;
 
 }
 
-float clamp(float a, float min, float max)
+bool BreakoutGame::BallIntersectsRect(int rectPrimHdl)
 {
-	return a < min ? min : (a > max ? max : a);
-}
-
-bool BallIntersectsRect(int rectPrim, glm::vec3& ballPos)
-{
-	glm::vec3 rectPos = PrimitiveManager::Get()->primitives[rectPrim].pos;
-	glm::vec3 rectScale = PrimitiveManager::Get()->primitives[rectPrim].scale;
+	glm::vec3 rectPos = PM->GetPrimPos(rectPrimHdl); 
+	glm::vec3 rectScale = PM->GetPrimScale(rectPrimHdl);
 
 	float left = rectPos.x - rectScale.x;
 	float right = rectPos.x + rectScale.x;
@@ -82,91 +93,97 @@ bool BallIntersectsRect(int rectPrim, glm::vec3& ballPos)
 
 	// If the distance is less than the circle's radius, an intersection occurs
 	float distanceSquared = (distanceX * distanceX) + (distanceY * distanceY);
-	return distanceSquared < (2 * 2);
+	return distanceSquared < (ballRad * ballRad);
 }
 
 
 void BreakoutGame::tick(float deltaTime)
 {
-	if (GetKey(KeyCode::KEY_LEFT))
-	{
-		paddlePos -= glm::vec3(0.5, 0, 0);
-		paddlePos.x = paddlePos.x < -renderer->screenW+paddleScale.x ? -renderer->screenW+paddleScale.x : paddlePos.x;
-		SetPrimPos(paddlePrimHdl, paddlePos);
-	}
+	//ball movement and intersection
+	glm::vec3 frameVel = ballVel * deltaTime * 10.0f;
 
-	if (GetKey(KeyCode::KEY_RIGHT))
-	{
-		paddlePos += glm::vec3(0.5, 0, 0);
-		paddlePos.x = (paddlePos.x) > renderer->screenW-paddleScale.x ? renderer->screenW-paddleScale.x : paddlePos.x;
-		SetPrimPos(paddlePrimHdl, paddlePos);
-	}
-
-	glm::vec3 frameVel = ballVel * deltaTime * 1000.0f;
 	ballPos += frameVel;
 
-	if (ballPos.y <= -renderer->screenH + 1)
+	//clamp the ball to the screen / it bounces off edges
+	if (ballPos.y <= -renderer->screenH + ballRad)
 	{
 		ballPos -= frameVel;
 		ballVel.y *= -1;
 	}
 	
-	if (ballPos.y >= renderer->screenH - 1)
+	//treat bottom edge separately, it's game over if ball hits it
+	if (ballPos.y >= renderer->screenH - ballRad)
 	{
 		ballPos -= frameVel;
 		ballVel.y *= -1;
 		gameOver = true;
-
 	}
 	
-	if (ballPos.x >= renderer->screenW - borderWidth -1)
+	if (ballPos.x >= renderer->screenW - ballRad
+		|| ballPos.x <= -renderer->screenW + ballRad)
 	{
 		ballPos -= frameVel;
 		ballVel.x *= -1;
 	}
 
-	if (ballPos.x <= -renderer->screenW + 1 + borderWidth)
-	{
-		ballPos -= frameVel;
-		ballVel.x *= -1;
-	}
-
+	//check for collision with bricks, kill brick if hit
 	for (int i = 0; i < numBricks; ++i)
 	{
-		if (brickPrimHdls[i] > -1 && BallIntersectsRect(brickPrimHdls[i], ballPos))
+		if (brickPrimHdls[i] > -1 && BallIntersectsRect(brickPrimHdls[i]))
 		{
-			glm::vec3 brickPos = PrimitiveManager::Get()->primitives[brickPrimHdls[i]].pos;
-			glm::vec3 brickScale = PrimitiveManager::Get()->primitives[brickPrimHdls[i]].scale;
+			glm::vec3 brickPos = PM->GetPrimPos(brickPrimHdls[i]);  
+			glm::vec3 brickScale = PM->GetPrimScale(brickPrimHdls[i]);
 			
 			ballPos -= ballVel * 0.5f;
-			while (BallIntersectsRect(brickPrimHdls[i], ballPos))
-			{
-				ballPos -= ballVel * 0.5f;
-			}
-			SetPrimPos(ballPrimHdl, ballPos);
+			PM->SetPrimPos(ballPrimHdl, ballPos);
 			
 			ballVel.y *= -1;
 			
-			PrimitiveManager::Get()->DestroyPrimitive(brickPrimHdls[i]);
+			PM->DestroyPrimitive(brickPrimHdls[i]);
 			brickPrimHdls[i] = -1;
 		}
 	}
 
-	if (BallIntersectsRect(paddlePrimHdl, ballPos))
+	if (BallIntersectsRect(paddlePrimHdl))
 	{
-		ballPos -= frameVel;
-		SetPrimPos(ballPrimHdl, ballPos);
+		//paddle doesn't get killed on hit, so we need to back up
+		//until we *just* aren't intersecting before bouncing
+		while (BallIntersectsRect(paddlePrimHdl))
+		{
+			ballPos -= ballVel * 0.1f;
+		}
+
+		float xIntersect = clamp(ballPos.x - paddlePos.x, -0.5, 0.5);
+	
+		if (xIntersect * xIntersect > (0.3 * 0.3))
+		{
+			ballVel.x = xIntersect;
+			ballVel = glm::normalize(ballVel);
+		}
+
 		ballVel.y *= -1;
 	}
 
-	SetPrimPos(ballPrimHdl, ballPos);
+	PM->SetPrimPos(ballPrimHdl, ballPos);
 
-	
+
+	//move paddle
+	if (GetKey(KeyCode::KEY_LEFT))
+	{
+		paddlePos -= glm::vec3(0.5f * deltaTime * 30.0f, 0, 0);
+	}
+	else if (GetKey(KeyCode::KEY_RIGHT))
+	{
+		paddlePos += glm::vec3(0.5f * deltaTime * 30.0f, 0, 0);
+	}
+
+	paddlePos.x = clamp(paddlePos.x, -renderer->screenW + paddleScale.x, renderer->screenW - paddleScale.x);
+	PM->SetPrimPos(paddlePrimHdl, paddlePos);
 }
 
 void BreakoutGame::draw() const
 {
-	PrimitiveManager::Get()->SubmitPrimitives(renderer);
+	PM->SubmitPrimitives(renderer);
 }
 
 bool BreakoutGame::isGameOver() const

@@ -225,7 +225,7 @@ LRESULT CALLBACK DefaultWndFunc(HWND window, UINT message, WPARAM wParam, LPARAM
 
 HWND makeWindow(HINSTANCE Instance, const char* title, UINT width, UINT height)
 {
-#if (_DEBUG)
+//#if (_DEBUG)
 	AllocConsole();
 	AttachConsole(GetCurrentProcessId());
 	FILE* pCout;
@@ -234,7 +234,7 @@ HWND makeWindow(HINSTANCE Instance, const char* title, UINT width, UINT height)
 	freopen_s(&pCout, "conout$", "w", stderr);
 
 	fclose(pCout);
-#endif
+//#endif
 
 	WNDCLASS windowClass = {};
 	windowClass.style = CS_OWNDC | CS_HREDRAW | CS_VREDRAW;
@@ -272,7 +272,16 @@ void HandleOSEvents()
 	}
 }
 
-double GetTime()
+long long GetMilliseconds()
 {
-	return (double)timeGetTime() / 10000.0f;
+	static LARGE_INTEGER s_frequency;
+	static BOOL s_use_qpc = QueryPerformanceFrequency(&s_frequency);
+	if (s_use_qpc) {
+		LARGE_INTEGER now;
+		QueryPerformanceCounter(&now);
+		return (1000LL * now.QuadPart) / s_frequency.QuadPart;
+	}
+	else {
+		return GetTickCount();
+	}
 }

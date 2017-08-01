@@ -18,6 +18,9 @@ public:
 
 	Renderer* renderer;
 private:
+	bool BallIntersectsRect(int rectPrimHdl);
+
+
 	int numBricks;
 
 	glm::vec3 paddlePos;
@@ -25,6 +28,7 @@ private:
 	glm::vec3 ballVel;
 	glm::vec3 paddleScale;
 	float borderWidth;
+	float ballRad;
 	int paddlePrimHdl;
 	int ballPrimHdl;
 	bool gameOver;

@@ -101,4 +101,4 @@ int GetMouseY();
 
 void Shutdown();
 
-double GetTime();
+long long GetMilliseconds();

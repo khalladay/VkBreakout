@@ -4,26 +4,6 @@
 #include "Renderer.h"
 
 
-void SetPrimPos(int primHdl, glm::vec3 position)
-{
-	PrimitiveManager::Get()->primitives[primHdl].pos = position;
-}
-
-void TranslatePrim(int primHdl, glm::vec3 translation)
-{
-	PrimitiveManager::Get()->primitives[primHdl].pos += translation;
-}
-
-void SetPrimCol(int primHdl, glm::vec4 col)
-{
-	PrimitiveManager::Get()->primitives[primHdl].col = col;
-
-}
-void SetPrimScale(int primHdl, glm::vec3 scale)
-{
-	PrimitiveManager::Get()->primitives[primHdl].scale = scale;
-}
-
 PrimitiveManager* PrimitiveManager::Get()
 {
 	static PrimitiveManager* instance = nullptr;
@@ -97,6 +77,31 @@ int PrimitiveManager::NewPrimitive(Mesh* meshResource)
 
 	next_prim_id++;
 	return next_prim_id - 1;
+}
+
+void PrimitiveManager::SetPrimScale(int hdl, glm::vec3 scale)
+{
+	primitives[hdl].scale = scale;
+}
+
+void PrimitiveManager::SetPrimPos(int hdl, glm::vec3 pos)
+{
+	primitives[hdl].pos = pos;
+}
+
+glm::vec3 PrimitiveManager::GetPrimPos(int hdl)
+{
+	return primitives[hdl].pos;
+}
+
+glm::vec3 PrimitiveManager::GetPrimScale(int hdl)
+{
+	return primitives[hdl].scale;
+}
+
+void PrimitiveManager::SetPrimCol(int hdl, glm::vec4 col)
+{
+	primitives[hdl].col = col;
 }
 
 PrimitiveManager::PrimitiveManager()

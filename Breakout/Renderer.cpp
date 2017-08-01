@@ -21,7 +21,7 @@ Renderer::Renderer(uint32_t width, uint32_t height, HINSTANCE Instance, HWND wnd
 	float invAspect = (float)SCREEN_H / (float)SCREEN_W;
 	float screenDim = 100.0f * aspect;
 	float iscreenDim = 100.0f* invAspect;
-	screenW = screenDim;
+	screenW = (int)screenDim;
 	screenH = 100;
 	VIEW_PROJECTION = glm::ortho(-(float)screenDim, (float)screenDim, -(float)100, (float)100, -1.0f, 1.0f);
 }
@@ -43,7 +43,7 @@ void Renderer::handleScreenResize()
 	float invAspect = (float)h / (float)w;
 	float screenDim = 100.0f * aspect;
 	float iscreenDim = 100.0f* invAspect;
-	screenW = screenDim;
+	screenW = (int)screenDim;
 	screenH = 100;
 	VIEW_PROJECTION = glm::ortho(-(float)screenDim, (float)screenDim, -(float)100, (float)100, -1.0f, 1.0f);
 

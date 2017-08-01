@@ -904,8 +904,6 @@ namespace vkh
 		vkDestroySemaphore(context.lDevice.device, context.imageAvailableSemaphore, nullptr);
 
 		vkFreeCommandBuffers(context.lDevice.device, context.commandPool, static_cast<uint32_t>(context.commandBuffers.size()), context.commandBuffers.data());
-	//	vkDestroyPipeline(context.lDevice.device, context.graphicsPipeline, nullptr);
-		//vkDestroyPipelineLayout(context.lDevice.device, context.pipelineLayout, nullptr);
 
 		for (size_t i = 0; i < context.swapChain.imageViews.size(); i++)
 		{
@@ -916,9 +914,6 @@ namespace vkh
 		delete[] context.frameFences;
 
 		vkDestroySwapchainKHR(context.lDevice.device, context.swapChain.swapChain, nullptr);
-
-
-
 		vkDestroyCommandPool(context.lDevice.device, context.commandPool, nullptr);
 
 		vkDestroySurfaceKHR(context.instance, context.surface.surface, nullptr);
