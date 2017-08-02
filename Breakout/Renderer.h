@@ -7,7 +7,7 @@
 class Renderer
 {
 public:
-	Renderer(uint32_t width, uint32_t height, HINSTANCE Instance, HWND wndHdl, const char* applicationName);
+	Renderer(HINSTANCE Instance, HWND wndHdl, const char* applicationName);
 	void draw(const struct PrimitiveUniformObject* uniformData, const std::vector<class Mesh*> primMeshes);
 	vkh::VkhContext& GetVkContext();
 

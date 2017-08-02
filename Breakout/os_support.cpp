@@ -41,6 +41,15 @@ struct InputState
 
 };
 
+struct AppInfo
+{
+	HWND wndHdl;
+	HINSTANCE instance;
+	int curW;
+	int curH;
+};
+
+struct AppInfo GAppInfo;
 struct InputState GInputState;
 
 void InitializeInputForWindow(HINSTANCE instance, HWND wndHdl, int width, int height)
@@ -85,6 +94,11 @@ void InitializeInputForWindow(HINSTANCE instance, HWND wndHdl, int width, int he
 	// Acquire the mouse.
 	result = GInputState.diMouse->Acquire();
 	checkhf(result, "Failed to acquire DirectInput mouse");
+
+	GAppInfo.wndHdl = wndHdl;
+	GAppInfo.instance = instance;
+	GAppInfo.curH = height;
+	GAppInfo.curW = width;
 }
 
 void PollInput()
@@ -209,10 +223,17 @@ LRESULT CALLBACK DefaultWndFunc(HWND window, UINT message, WPARAM wParam, LPARAM
 	}break;
 	case WM_SIZE:
 	{
+		RECT rect;
+		GetWindowRect(window, &rect);
+		GAppInfo.curW = rect.right - rect.left;
+		GAppInfo.curH = rect.bottom - rect.top;
+
 		if (resizeCB)
 		{
 			resizeCB();
 		}
+		
+
 	}
 	default:
 	{
@@ -221,6 +242,16 @@ LRESULT CALLBACK DefaultWndFunc(HWND window, UINT message, WPARAM wParam, LPARAM
 	}
 
 	return result;
+}
+
+int GetScreenH()
+{
+	return GAppInfo.curH;
+}
+
+int GetScreenW()
+{
+	return GAppInfo.curW;
 }
 
 HWND makeWindow(HINSTANCE Instance, const char* title, UINT width, UINT height)

@@ -3,12 +3,9 @@
 #include "Mesh.h"
 #include "os_support.h"
 
-HWND window;
-
-Renderer::Renderer(uint32_t width, uint32_t height, HINSTANCE Instance, HWND wndHdl, const char* applicationName)
+Renderer::Renderer(HINSTANCE Instance, HWND wndHdl, const char* applicationName)
 {
-	window = wndHdl;
-	vkh::CreateWin32Context(context, width, height, Instance, wndHdl, applicationName);
+	vkh::CreateWin32Context(context, GetScreenW(), GetScreenH(), Instance, wndHdl, applicationName);
 	vkh::CreateColorOnlyRenderPass(renderPass, context.swapChain, context.lDevice.device);
 	vkh::CreateFramebuffers(swapChainFramebuffers, context.swapChain, renderPass, context.lDevice.device);
 	createDescriptorSetLayout();
@@ -17,8 +14,8 @@ Renderer::Renderer(uint32_t width, uint32_t height, HINSTANCE Instance, HWND wnd
 
 	setResizeCallback(std::bind(&Renderer::handleScreenResize, this));
 
-	float aspect = (float)SCREEN_W / (float)SCREEN_H;
-	float invAspect = (float)SCREEN_H / (float)SCREEN_W;
+	float aspect = (float)GetScreenW() / (float)GetScreenH();
+	float invAspect = (float)GetScreenH() / (float)GetScreenW();
 	float screenDim = 100.0f * aspect;
 	float iscreenDim = 100.0f* invAspect;
 	screenW = (int)screenDim;
@@ -33,11 +30,8 @@ vkh::VkhContext& Renderer::GetVkContext()
 
 void Renderer::handleScreenResize()
 {
-	RECT rect;
-	GetWindowRect(window, &rect);
-
-	int w = rect.right - rect.left;
-	int h = rect.bottom - rect.top;
+	int w = GetScreenW();
+	int h = GetScreenH();
 	screenW = w;
 	float aspect = (float)w/ (float)h;
 	float invAspect = (float)h / (float)w;
@@ -58,15 +52,9 @@ void Renderer::draw(const struct PrimitiveUniformObject* uniformData, const std:
 	size_t dynamicAlignment = (sizeof(PrimitiveUniformObject) / uboAlignment) * uboAlignment + ((sizeof(PrimitiveUniformObject) % uboAlignment) > 0 ? uboAlignment : 0);
 
 	static void* udata = nullptr;
-	if (!udata)
-	{
-	//	vkMapMemory(context.lDevice.device, uniformBufferMemory, 0, dynamicAlignment * primMeshes.size(), 0, &udata);
-
-	}
 	vkMapMemory(context.lDevice.device, uniformBufferMemory, 0, dynamicAlignment * primMeshes.size(), 0, &udata);
 	memcpy(udata, uniformData,  dynamicAlignment * primMeshes.size());
 	vkUnmapMemory(context.lDevice.device, uniformBufferMemory);
-	//udata = nullptr;
 
 	VkResult res;
 

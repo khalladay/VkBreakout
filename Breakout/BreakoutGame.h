@@ -7,16 +7,15 @@
 class BreakoutGame
 {
 public:
-	BreakoutGame(class Renderer* renderer);
+	BreakoutGame();
 	~BreakoutGame();
 
 	void tick(float deltaTime);
-	void draw() const;
+	void draw(class Renderer* renderer) const;
 
 	bool isGameOver() const;
 	void restart();
 
-	Renderer* renderer;
 private:
 	bool BallIntersectsRect(int rectPrimHdl);
 

@@ -11,26 +11,25 @@ float clamp(float a, float min, float max)
 	return a < min ? min : (a > max ? max : a);
 }
 
-BreakoutGame::BreakoutGame(Renderer* r)
-	: renderer(r)
+BreakoutGame::BreakoutGame()
 {
 	//setup game config
 	{
 		numBricks = 50;
 		borderWidth = 0.0f;
 
-		paddlePos = glm::vec3(0, r->screenH *0.8f, 0);
+		paddlePos = glm::vec3(0, 100 *0.8f, 0);
 		paddleScale = glm::vec3(10, 1, 10);
 
-		ballPos = glm::vec3(0, r->screenH * 0.5, 0);
+		ballPos = glm::vec3(0, 100 * 0.5, 0);
 		ballVel = glm::normalize(glm::vec3(0.5, -1, 0));
 		ballRad = 1.5f;
 	}
 
 	//paddle/ball initialization
 	{
-		paddlePrimHdl = PM->NewPrimitive(MeshManager::Get()->GetRectMesh(r));
-		ballPrimHdl = PM->NewPrimitive(MeshManager::Get()->GetCircleMesh(r));
+		paddlePrimHdl = PM->NewPrimitive(MeshManager::Get()->GetRectMesh());
+		ballPrimHdl = PM->NewPrimitive(MeshManager::Get()->GetCircleMesh());
 
 		PM->SetPrimPos(ballPrimHdl, ballPos);
 		PM->SetPrimScale(ballPrimHdl, glm::vec3(ballRad * 2, ballRad * 2, ballRad * 2));
@@ -46,7 +45,7 @@ BreakoutGame::BreakoutGame(Renderer* r)
 
 		for (int i = 0; i < numBricks; ++i)
 		{
-			int b = PM->NewPrimitive(MeshManager::Get()->GetRectMesh(r));
+			int b = PM->NewPrimitive(MeshManager::Get()->GetRectMesh());
 			glm::vec3 p = glm::vec3(-110 + (i % 10) * 25, -50 + (i / 10) * 10, 0);
 
 			PM->SetPrimPos(b, p);
@@ -99,28 +98,32 @@ bool BreakoutGame::BallIntersectsRect(int rectPrimHdl)
 
 void BreakoutGame::tick(float deltaTime)
 {
+	float aspect = (float)GetScreenW() / (float)GetScreenH();
+	float screenWOrtho = 100.0f * aspect;
+	float screenHOrtho = 100.0f;
+
 	//ball movement and intersection
 	glm::vec3 frameVel = ballVel * deltaTime * 10.0f;
 
 	ballPos += frameVel;
 
 	//clamp the ball to the screen / it bounces off edges
-	if (ballPos.y <= -renderer->screenH + ballRad)
+	if (ballPos.y <= -screenHOrtho + ballRad)
 	{
 		ballPos -= frameVel;
 		ballVel.y *= -1;
 	}
 	
 	//treat bottom edge separately, it's game over if ball hits it
-	if (ballPos.y >= renderer->screenH - ballRad)
+	if (ballPos.y >= screenHOrtho - ballRad)
 	{
 		ballPos -= frameVel;
 		ballVel.y *= -1;
 		gameOver = true;
 	}
 	
-	if (ballPos.x >= renderer->screenW - ballRad
-		|| ballPos.x <= -renderer->screenW + ballRad)
+	if (ballPos.x >= screenWOrtho - ballRad
+		|| ballPos.x <= -screenWOrtho + ballRad)
 	{
 		ballPos -= frameVel;
 		ballVel.x *= -1;
@@ -177,11 +180,11 @@ void BreakoutGame::tick(float deltaTime)
 		paddlePos += glm::vec3(0.5f * deltaTime * 30.0f, 0, 0);
 	}
 
-	paddlePos.x = clamp(paddlePos.x, -renderer->screenW + paddleScale.x, renderer->screenW - paddleScale.x);
+	paddlePos.x = clamp(paddlePos.x, -screenWOrtho + paddleScale.x, screenWOrtho - paddleScale.x);
 	PM->SetPrimPos(paddlePrimHdl, paddlePos);
 }
 
-void BreakoutGame::draw() const
+void BreakoutGame::draw(Renderer* renderer) const
 {
 	PM->SubmitPrimitives(renderer);
 }

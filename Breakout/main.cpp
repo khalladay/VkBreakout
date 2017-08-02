@@ -3,7 +3,7 @@
 #include "Renderer.h"
 #include "stdafx.h"
 #include "BreakoutGame.h"
-
+#include "MeshManager.h"
 Renderer* renderer;
 BreakoutGame* game;
 
@@ -12,8 +12,9 @@ void mainLoop();
 int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE pInstance, LPSTR cmdLine, int showCode)
 {
 	HWND wndHdl = makeWindow(Instance, APP_NAME, SCREEN_W, SCREEN_H);
-	renderer = new Renderer(SCREEN_W, SCREEN_H, Instance, wndHdl, APP_NAME);
-	game = new BreakoutGame(renderer);
+	renderer = new Renderer(Instance, wndHdl, APP_NAME);
+	MeshManager::Get()->Initialize(renderer);
+	game = new BreakoutGame();
 
 
 	mainLoop();
@@ -24,7 +25,9 @@ int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE pInstance, LPSTR cmdLine, int
 void mainLoop()
 {
 	bool running = true;
+
 	long long lastFrame = GetMilliseconds();
+	
 	double fpsAccum = 0.0;
 	int count = 0;
 
@@ -52,10 +55,10 @@ void mainLoop()
 		if (game->isGameOver())
 		{
 			delete game;;
-			game = new BreakoutGame(renderer);
+			game = new BreakoutGame();
 		}
 
 		game->tick(deltaTime/100.0f);
-		game->draw();
+		game->draw(renderer);
 	}
 }

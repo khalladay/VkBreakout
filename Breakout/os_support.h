@@ -102,3 +102,5 @@ int GetMouseY();
 void Shutdown();
 
 long long GetMilliseconds();
+int GetScreenH();
+int GetScreenW();
