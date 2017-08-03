@@ -1,21 +1,20 @@
 #include <stdio.h>
+#include "stdafx.h"
+
 #include "os_support.h"
 #include "Renderer.h"
-#include "stdafx.h"
 #include "BreakoutGame.h"
-#include "MeshManager.h"
-Renderer* renderer;
-BreakoutGame* game;
 
+Renderer* renderer;
 void mainLoop();
 
 int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE pInstance, LPSTR cmdLine, int showCode)
 {
-	HWND wndHdl = makeWindow(Instance, APP_NAME, SCREEN_W, SCREEN_H);
-	renderer = new Renderer(Instance, wndHdl, APP_NAME);
-	MeshManager::Get()->Initialize(renderer);
-	game = new BreakoutGame();
+	HWND wndHdl = OS::makeWindow(Instance, APP_NAME, SCREEN_W, SCREEN_H);
 
+	renderer = new Renderer(Instance, wndHdl, APP_NAME);
+
+	Breakout::newGame();
 
 	mainLoop();
 
@@ -26,14 +25,14 @@ void mainLoop()
 {
 	bool running = true;
 
-	long long lastFrame = GetMilliseconds();
+	long long lastFrame = OS::getMilliseconds();
 	
 	double fpsAccum = 0.0;
 	int count = 0;
 
 	while (running)
 	{
-		long long thisFrameTime = GetMilliseconds();
+		long long thisFrameTime = OS::getMilliseconds();
 		long long deltaTime = (thisFrameTime - lastFrame);
 		lastFrame = thisFrameTime;
 		fpsAccum += deltaTime * 10.0f;
@@ -45,20 +44,19 @@ void mainLoop()
 			fpsAccum = 0;
 		}
 
-		HandleOSEvents();
+		OS::handleOSEvents();
 
-		if (GetKey(KEY_ESCAPE))
+		if (OS::getKey(OS::KEY_ESCAPE))
 		{
 			running = false;
 		}
 
-		if (game->isGameOver())
+		if (Breakout::isGameOver())
 		{
-			delete game;;
-			game = new BreakoutGame();
+			Breakout::newGame();
 		}
 
-		game->tick(deltaTime/100.0f);
-		game->draw(renderer);
+		Breakout::tick(deltaTime/100.0f);
+		Breakout::draw(renderer);
 	}
 }

@@ -23,12 +23,6 @@ MeshManager* MeshManager::Get()
 	return instance;
 }
 
-void MeshManager::Initialize(Renderer* inR)
-{
-	renderer = inR;
-}
-
-
 Mesh* MeshManager::GetCircleMesh()
 {
 	if (!circleMesh)
@@ -61,7 +55,7 @@ Mesh* MeshManager::GetCircleMesh()
 			}
 		}
 
-		circleMesh = new Mesh(circleVerts, circleIndices, renderer);
+		circleMesh = new Mesh(circleVerts, circleIndices);
 	}
 
 	return circleMesh;
@@ -84,7 +78,7 @@ Mesh* MeshManager::GetRectMesh()
 			0,1,2,2,3,0
 		};
 
-		rectMesh = new Mesh(rectVerts, rectIndices, renderer);
+		rectMesh = new Mesh(rectVerts, rectIndices);
 
 	}
 

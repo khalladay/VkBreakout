@@ -3,19 +3,22 @@
 #include "Mesh.h"
 #include "os_support.h"
 
+using namespace Primitive;
+using namespace vkh;
+
 Renderer::Renderer(HINSTANCE Instance, HWND wndHdl, const char* applicationName)
 {
-	vkh::CreateWin32Context(context, GetScreenW(), GetScreenH(), Instance, wndHdl, applicationName);
-	vkh::CreateColorOnlyRenderPass(renderPass, context.swapChain, context.lDevice.device);
-	vkh::CreateFramebuffers(swapChainFramebuffers, context.swapChain, renderPass, context.lDevice.device);
+	CreateWin32Context(GContext, OS::getScreenW(), OS::getScreenH(), Instance, wndHdl, applicationName);
+	CreateColorOnlyRenderPass(renderPass, GContext.swapChain, GContext.lDevice.device);
+	CreateFramebuffers(swapChainFramebuffers, GContext.swapChain, renderPass, GContext.lDevice.device);
 	createDescriptorSetLayout();
 	createDescriptorSet();
 	createPipelines();
 
-	setResizeCallback(std::bind(&Renderer::handleScreenResize, this));
+	OS::setResizeCallback(std::bind(&Renderer::handleScreenResize, this));
 
-	float aspect = (float)GetScreenW() / (float)GetScreenH();
-	float invAspect = (float)GetScreenH() / (float)GetScreenW();
+	float aspect = (float)OS::getScreenW() / (float)OS::getScreenH();
+	float invAspect = (float)OS::getScreenH() / (float)OS::getScreenW();
 	float screenDim = 100.0f * aspect;
 	float iscreenDim = 100.0f* invAspect;
 	screenW = (int)screenDim;
@@ -23,15 +26,10 @@ Renderer::Renderer(HINSTANCE Instance, HWND wndHdl, const char* applicationName)
 	VIEW_PROJECTION = glm::ortho(-(float)screenDim, (float)screenDim, -(float)100, (float)100, -1.0f, 1.0f);
 }
 
-vkh::VkhContext& Renderer::GetVkContext()
-{
-	return context;
-}
-
 void Renderer::handleScreenResize()
 {
-	int w = GetScreenW();
-	int h = GetScreenH();
+	int w = OS::getScreenW();
+	int h = OS::getScreenH();
 	screenW = w;
 	float aspect = (float)w/ (float)h;
 	float invAspect = (float)h / (float)w;
@@ -48,13 +46,13 @@ void Renderer::draw(const struct PrimitiveUniformObject* uniformData, const std:
 	//max size of buffer we allocated
 	assert(primMeshes.size() < 256);
 
-	size_t uboAlignment = GetVkContext().gpu.deviceProps.limits.minUniformBufferOffsetAlignment;
+	size_t uboAlignment = GContext.gpu.deviceProps.limits.minUniformBufferOffsetAlignment;
 	size_t dynamicAlignment = (sizeof(PrimitiveUniformObject) / uboAlignment) * uboAlignment + ((sizeof(PrimitiveUniformObject) % uboAlignment) > 0 ? uboAlignment : 0);
 
 	static void* udata = nullptr;
-	vkMapMemory(context.lDevice.device, uniformBufferMemory, 0, dynamicAlignment * primMeshes.size(), 0, &udata);
+	vkMapMemory(GContext.lDevice.device, uniformBufferMemory, 0, dynamicAlignment * primMeshes.size(), 0, &udata);
 	memcpy(udata, uniformData,  dynamicAlignment * primMeshes.size());
-	vkUnmapMemory(context.lDevice.device, uniformBufferMemory);
+	vkUnmapMemory(GContext.lDevice.device, uniformBufferMemory);
 
 	VkResult res;
 
@@ -62,17 +60,17 @@ void Renderer::draw(const struct PrimitiveUniformObject* uniformData, const std:
 	uint32_t imageIndex;
 
 	//using uint64 max for timeout disables it
-	res = vkAcquireNextImageKHR(context.lDevice.device, context.swapChain.swapChain, UINT64_MAX, context.imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+	res = vkAcquireNextImageKHR(GContext.lDevice.device, GContext.swapChain.swapChain, UINT64_MAX, GContext.imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
 	
-	if (context.frameFences[imageIndex])
+	if (GContext.frameFences[imageIndex])
 	{
 		// Fence should be unsignaled
-		if (vkGetFenceStatus(context.lDevice.device, context.frameFences[imageIndex]) == VK_SUCCESS)
+		if (vkGetFenceStatus(GContext.lDevice.device, GContext.frameFences[imageIndex]) == VK_SUCCESS)
 		{
-			vkWaitForFences(context.lDevice.device, 1, &context.frameFences[imageIndex], true, 0);
+			vkWaitForFences(GContext.lDevice.device, 1, &GContext.frameFences[imageIndex], true, 0);
 		}
 	}
-	vkResetFences(context.lDevice.device, 1, &context.frameFences[imageIndex]);
+	vkResetFences(GContext.lDevice.device, 1, &GContext.frameFences[imageIndex]);
 
 	if (res == VK_ERROR_OUT_OF_DATE_KHR)
 	{
@@ -90,8 +88,8 @@ void Renderer::draw(const struct PrimitiveUniformObject* uniformData, const std:
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 	beginInfo.pInheritanceInfo = nullptr; // Optional
-	vkResetCommandBuffer(context.commandBuffers[imageIndex], VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
-	res = vkBeginCommandBuffer(context.commandBuffers[imageIndex], &beginInfo);
+	vkResetCommandBuffer(GContext.commandBuffers[imageIndex], VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
+	res = vkBeginCommandBuffer(GContext.commandBuffers[imageIndex], &beginInfo);
 	assert(res == VK_SUCCESS);
 
 	VkRenderPassBeginInfo renderPassInfo = {};
@@ -99,50 +97,50 @@ void Renderer::draw(const struct PrimitiveUniformObject* uniformData, const std:
 	renderPassInfo.renderPass = renderPass;
 	renderPassInfo.framebuffer = swapChainFramebuffers[imageIndex];
 	renderPassInfo.renderArea.offset = { 0, 0 };
-	renderPassInfo.renderArea.extent = context.swapChain.extent;
+	renderPassInfo.renderArea.extent = GContext.swapChain.extent;
 
 	VkClearValue clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
 	renderPassInfo.clearValueCount = 1;
 	renderPassInfo.pClearValues = &clearColor;
 
-	vkCmdBeginRenderPass(context.commandBuffers[imageIndex], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+	vkCmdBeginRenderPass(GContext.commandBuffers[imageIndex], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-	vkCmdBindPipeline(context.commandBuffers[imageIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, blockMaterial.gfxPipeline);
+	vkCmdBindPipeline(GContext.commandBuffers[imageIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, blockMaterial.gfxPipeline);
 	for (int i = 0; i < primMeshes.size(); ++i)
 	{
 		uint32_t dynamicOffset = i * static_cast<uint32_t>(dynamicAlignment);
 		VkBuffer vertexBuffers[] = { primMeshes[i]->vBuffer };
 		VkDeviceSize offsets[] = { 0 };
-		vkCmdBindDescriptorSets(context.commandBuffers[imageIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, blockMaterial.pipelineLayout, 0, 1, &descriptorSet, 1, &dynamicOffset);
+		vkCmdBindDescriptorSets(GContext.commandBuffers[imageIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, blockMaterial.pipelineLayout, 0, 1, &descriptorSet, 1, &dynamicOffset);
 
-		vkCmdBindVertexBuffers(context.commandBuffers[imageIndex], 0, 1, vertexBuffers, offsets);
-		vkCmdBindIndexBuffer(context.commandBuffers[imageIndex], primMeshes[i]->indexBuffer, 0, VK_INDEX_TYPE_UINT16);
-		vkCmdDrawIndexed(context.commandBuffers[imageIndex], static_cast<uint32_t>(primMeshes[i]->indexCount), 1, 0, 0, 0);
+		vkCmdBindVertexBuffers(GContext.commandBuffers[imageIndex], 0, 1, vertexBuffers, offsets);
+		vkCmdBindIndexBuffer(GContext.commandBuffers[imageIndex], primMeshes[i]->indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+		vkCmdDrawIndexed(GContext.commandBuffers[imageIndex], static_cast<uint32_t>(primMeshes[i]->indexCount), 1, 0, 0, 0);
 	}
 
-	vkCmdEndRenderPass(context.commandBuffers[imageIndex]);
+	vkCmdEndRenderPass(GContext.commandBuffers[imageIndex]);
 
-	res = vkEndCommandBuffer(context.commandBuffers[imageIndex]);
+	res = vkEndCommandBuffer(GContext.commandBuffers[imageIndex]);
 	assert(res == VK_SUCCESS);
 
 	//wait on writing colours to the buffer until the semaphore says the buffer is available
 	VkSubmitInfo submitInfo = {};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-	VkSemaphore waitSemaphores[] = { context.imageAvailableSemaphore };
+	VkSemaphore waitSemaphores[] = { GContext.imageAvailableSemaphore };
 	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 	submitInfo.waitSemaphoreCount = 1;
 	submitInfo.pWaitSemaphores = waitSemaphores;
 	submitInfo.pWaitDstStageMask = waitStages;
 
 	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &context.commandBuffers[imageIndex];
+	submitInfo.pCommandBuffers = &GContext.commandBuffers[imageIndex];
 
-	VkSemaphore signalSemaphores[] = { context.renderFinishedSemaphore };
+	VkSemaphore signalSemaphores[] = { GContext.renderFinishedSemaphore };
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = signalSemaphores;
 
-	res = vkQueueSubmit(context.lDevice.graphicsQueue, 1, &submitInfo, context.frameFences[imageIndex]);
+	res = vkQueueSubmit(GContext.lDevice.graphicsQueue, 1, &submitInfo, GContext.frameFences[imageIndex]);
 	assert(res == VK_SUCCESS);
 
 
@@ -154,12 +152,12 @@ void Renderer::draw(const struct PrimitiveUniformObject* uniformData, const std:
 	presentInfo.waitSemaphoreCount = 1;
 	presentInfo.pWaitSemaphores = signalSemaphores;
 
-	VkSwapchainKHR swapChains[] = { context.swapChain.swapChain };
+	VkSwapchainKHR swapChains[] = { GContext.swapChain.swapChain };
 	presentInfo.swapchainCount = 1;
 	presentInfo.pSwapchains = swapChains;
 	presentInfo.pImageIndices = &imageIndex;
 	presentInfo.pResults = nullptr; // Optional
-	res = vkQueuePresentKHR(context.lDevice.transferQueue, &presentInfo);
+	res = vkQueuePresentKHR(GContext.lDevice.transferQueue, &presentInfo);
 
 	if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR)
 	{
@@ -174,18 +172,18 @@ void Renderer::createDescriptorSet()
 	VkDescriptorSetLayout layouts[] = { descriptorSetLayout };
 	VkDescriptorSetAllocateInfo allocInfo = {};
 	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-	allocInfo.descriptorPool = context.descriptorPool;
+	allocInfo.descriptorPool = GContext.descriptorPool;
 	allocInfo.descriptorSetCount = 1;
 	allocInfo.pSetLayouts = layouts;
 
-	res = vkAllocateDescriptorSets(context.lDevice.device, &allocInfo, &descriptorSet);
+	res = vkAllocateDescriptorSets(GContext.lDevice.device, &allocInfo, &descriptorSet);
 
 	//now we need to configure the descriptor inside the set.
 
 	//our descriptor points to a uniform buffer, so it's configured with
 	//a VkDescriptorBufferInfo
 
-	size_t uboAlignment = GetVkContext().gpu.deviceProps.limits.minUniformBufferOffsetAlignment;
+	size_t uboAlignment = GContext.gpu.deviceProps.limits.minUniformBufferOffsetAlignment;
 	size_t dynamicAlignment = (sizeof(PrimitiveUniformObject) / uboAlignment) * uboAlignment + ((sizeof(PrimitiveUniformObject) % uboAlignment) > 0 ? uboAlignment : 0);
 
 	
@@ -193,13 +191,13 @@ void Renderer::createDescriptorSet()
 	VkDeviceSize bufferSize = dynamicAlignment * 256;
 #endif
 
-	vkh::CreateBuffer(uniformBuffer,
+	CreateBuffer(uniformBuffer,
 		uniformBufferMemory,
 		bufferSize,
 		VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-		context.lDevice.device,
-		context.gpu.device);
+		GContext.lDevice.device,
+		GContext.gpu.device);
 
 
 	VkDescriptorBufferInfo bufferInfo = {};
@@ -219,7 +217,7 @@ void Renderer::createDescriptorSet()
 	descriptorWrite.pImageInfo = nullptr; // Optional
 	descriptorWrite.pTexelBufferView = nullptr; // Optional
 
-	vkUpdateDescriptorSets(context.lDevice.device, 1, &descriptorWrite, 0, nullptr);
+	vkUpdateDescriptorSets(GContext.lDevice.device, 1, &descriptorWrite, 0, nullptr);
 }
 
 void Renderer::createDescriptorSetLayout()
@@ -243,7 +241,7 @@ void Renderer::createDescriptorSetLayout()
 	layoutInfo.bindingCount = 1;
 	layoutInfo.pBindings = bindings;
 
-	VkResult res = vkCreateDescriptorSetLayout(context.lDevice.device, &layoutInfo, nullptr, &descriptorSetLayout);
+	VkResult res = vkCreateDescriptorSetLayout(GContext.lDevice.device, &layoutInfo, nullptr, &descriptorSetLayout);
 	assert(res == VK_SUCCESS);
 }
 
@@ -254,13 +252,13 @@ void Renderer::createPipelines()
 	vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
 	vertShaderStageInfo.pName = "main";
-	vkh::CreateShaderModule(vertShaderStageInfo.module, "./shaders/vertColorPassthrough.vert.spv", context.lDevice.device);
+	CreateShaderModule(vertShaderStageInfo.module, "./shaders/vertColorPassthrough.vert.spv", GContext.lDevice.device);
 
 	VkPipelineShaderStageCreateInfo fragShaderStageInfo = {};
 	fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
 	fragShaderStageInfo.pName = "main";
-	vkh::CreateShaderModule(fragShaderStageInfo.module, "./shaders/fragFlatColor.frag.spv", context.lDevice.device);
+	CreateShaderModule(fragShaderStageInfo.module, "./shaders/fragFlatColor.frag.spv", GContext.lDevice.device);
 
 	VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
 
@@ -288,12 +286,12 @@ void Renderer::createPipelines()
 
 
 	VkViewport viewport;
-	vkh::CreateDefaultViewportForSwapChain(viewport, context.swapChain);
+	CreateDefaultViewportForSwapChain(viewport, GContext.swapChain);
 
 
 	VkRect2D scissor = {};
 	scissor.offset = { 0, 0 };
-	scissor.extent = context.swapChain.extent;
+	scissor.extent = GContext.swapChain.extent;
 
 	VkPipelineViewportStateCreateInfo viewportState = {};
 	viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -303,16 +301,16 @@ void Renderer::createPipelines()
 	viewportState.pScissors = &scissor;
 
 	VkPipelineRasterizationStateCreateInfo rasterizer = {};
-	vkh::CreateDefaultPipelineRasterizationStateCreateInfo(rasterizer);
+	CreateDefaultPipelineRasterizationStateCreateInfo(rasterizer);
 
 	VkPipelineMultisampleStateCreateInfo multisampling = {};
-	vkh::CreateMultisampleStateCreateInfo(multisampling, 1);
+	CreateMultisampleStateCreateInfo(multisampling, 1);
 
 	VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
-	vkh::CreateOpaqueColorBlendAttachState(colorBlendAttachment);
+	CreateOpaqueColorBlendAttachState(colorBlendAttachment);
 
 	VkPipelineColorBlendStateCreateInfo colorBlending = {};
-	vkh::CreateDefaultColorBlendStateCreateInfo(colorBlending, colorBlendAttachment);
+	CreateDefaultColorBlendStateCreateInfo(colorBlending, colorBlendAttachment);
 
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
 	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -321,7 +319,7 @@ void Renderer::createPipelines()
 	pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
 	pipelineLayoutInfo.pPushConstantRanges = 0; // Optional
 
-	VkResult res = vkCreatePipelineLayout(context.lDevice.device, &pipelineLayoutInfo, nullptr, &blockMaterial.pipelineLayout);
+	VkResult res = vkCreatePipelineLayout(GContext.lDevice.device, &pipelineLayoutInfo, nullptr, &blockMaterial.pipelineLayout);
 	assert(res == VK_SUCCESS);
 
 
@@ -345,19 +343,19 @@ void Renderer::createPipelines()
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
 	pipelineInfo.basePipelineIndex = -1; // Optional
 
-	res = vkCreateGraphicsPipelines(context.lDevice.device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &blockMaterial.gfxPipeline);
+	res = vkCreateGraphicsPipelines(GContext.lDevice.device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &blockMaterial.gfxPipeline);
 	assert(res == VK_SUCCESS);
 
-	vkDestroyShaderModule(context.lDevice.device, vertShaderStageInfo.module, nullptr);
-	vkDestroyShaderModule(context.lDevice.device, fragShaderStageInfo.module, nullptr);
+	vkDestroyShaderModule(GContext.lDevice.device, vertShaderStageInfo.module, nullptr);
+	vkDestroyShaderModule(GContext.lDevice.device, fragShaderStageInfo.module, nullptr);
 
 }
 
 Renderer::~Renderer()
 {
-	vkDestroyPipeline(context.lDevice.device, blockMaterial.gfxPipeline, nullptr);
-	vkDestroyPipelineLayout(context.lDevice.device, blockMaterial.pipelineLayout, nullptr);
+	vkDestroyPipeline(GContext.lDevice.device, blockMaterial.gfxPipeline, nullptr);
+	vkDestroyPipelineLayout(GContext.lDevice.device, blockMaterial.pipelineLayout, nullptr);
 
-	vkh::DestroyContext(context);
+	DestroyContext(GContext);
 
 }

@@ -7,23 +7,25 @@ struct PrimitiveUniformObject
 	glm::vec4 color;
 };
 
-struct Primitive
+class Renderer;
+class Mesh;
+
+namespace Primitive
 {
-	glm::vec3 pos;
-	glm::vec3 scale;
-	glm::vec4 col;
-	class Mesh* meshResource;
-};
+	struct Primitive;
 
-int NewPrimitive(class Mesh* meshResource);
-void DestroyPrimitive(int handle);
+	int newPrimitive(Mesh* meshResource);
+	void destroyPrimitive(int handle);
 
-void SetPrimScale(int hdl, glm::vec3 scale);
-void SetPrimPos(int hdl, glm::vec3 pos);
-void SetPrimCol(int hdl, glm::vec4 col);
+	void setPrimScale(int hdl, glm::vec3 scale);
+	void setPrimPos(int hdl, glm::vec3 pos);
+	void setPrimCol(int hdl, glm::vec4 col);
 
-glm::vec3 GetPrimPos(int hdl);
-glm::vec3 GetPrimScale(int hdl);
+	glm::vec3 getPrimPos(int hdl);
+	glm::vec3 getPrimScale(int hdl);
 
-void SubmitPrimitives(class Renderer* renderer);
+	void destroyAllPrimitives();
+
+	void submitPrimitives(Renderer* renderer);
+}
 

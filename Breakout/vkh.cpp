@@ -9,6 +9,8 @@
 
 namespace vkh
 {
+	VkhContext GContext;
+
 	VkDebugReportCallbackEXT callback;
 
 	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(

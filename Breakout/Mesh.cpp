@@ -1,8 +1,7 @@
 #include "Mesh.h"
-#include "Renderer.h"
+#include "vkh.h"
 
-Mesh::Mesh(const std::vector<Vertex>& verts, Renderer* renderer)
-	: rc(&renderer->GetVkContext())
+Mesh::Mesh(const std::vector<Vertex>& verts)
 {
 	auto bufferSize = sizeof(Vertex) * verts.size();
 	vertCount = verts.size();
@@ -11,18 +10,17 @@ Mesh::Mesh(const std::vector<Vertex>& verts, Renderer* renderer)
 		bufferSize,
 		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
 		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-		rc->lDevice.device,
-		rc->gpu.device);
+		vkh::GContext.lDevice.device,
+		vkh::GContext.gpu.device);
 
 	void* data;
-	vkMapMemory(rc->lDevice.device, vBufferMemory, 0, bufferSize, 0, &data);
+	vkMapMemory(vkh::GContext.lDevice.device, vBufferMemory, 0, bufferSize, 0, &data);
 	memcpy(data, verts.data(), bufferSize);
-	vkUnmapMemory(rc->lDevice.device, vBufferMemory);
+	vkUnmapMemory(vkh::GContext.lDevice.device, vBufferMemory);
 
 }
 
-Mesh::Mesh(const std::vector<Vertex>& verts, const std::vector<UINT16> indices, class Renderer* renderer)
-	: rc(&renderer->GetVkContext())
+Mesh::Mesh(const std::vector<Vertex>& verts, const std::vector<UINT16> indices)
 {
 	//copy vert data
 	auto bufferSize = sizeof(Vertex) * verts.size();
@@ -32,13 +30,13 @@ Mesh::Mesh(const std::vector<Vertex>& verts, const std::vector<UINT16> indices, 
 		bufferSize,
 		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
 		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-		rc->lDevice.device,
-		rc->gpu.device);
+		vkh::GContext.lDevice.device,
+		vkh::GContext.gpu.device);
 
 	void* data;
-	vkMapMemory(rc->lDevice.device, vBufferMemory, 0, bufferSize, 0, &data);
+	vkMapMemory(vkh::GContext.lDevice.device, vBufferMemory, 0, bufferSize, 0, &data);
 	memcpy(data, verts.data(), bufferSize);
-	vkUnmapMemory(rc->lDevice.device, vBufferMemory);
+	vkUnmapMemory(vkh::GContext.lDevice.device, vBufferMemory);
 
 	//copy index data
 	auto indexBufSize = sizeof(UINT16) * indices.size();
@@ -48,22 +46,22 @@ Mesh::Mesh(const std::vector<Vertex>& verts, const std::vector<UINT16> indices, 
 		indexBufSize,
 		VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
 		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-		rc->lDevice.device,
-		rc->gpu.device);
+		vkh::GContext.lDevice.device,
+		vkh::GContext.gpu.device);
 
 	void* idata;
-	vkMapMemory(rc->lDevice.device, indexBufferMemory, 0, indexBufSize, 0, &idata);
+	vkMapMemory(vkh::GContext.lDevice.device, indexBufferMemory, 0, indexBufSize, 0, &idata);
 	memcpy(idata, indices.data(), indexBufSize);
-	vkUnmapMemory(rc->lDevice.device, indexBufferMemory);
+	vkUnmapMemory(vkh::GContext.lDevice.device, indexBufferMemory);
 }
 
 Mesh::~Mesh()
 {
-	vkDestroyBuffer(rc->lDevice.device, vBuffer, nullptr);
-	vkFreeMemory(rc->lDevice.device, vBufferMemory, nullptr);
+	vkDestroyBuffer(vkh::GContext.lDevice.device, vBuffer, nullptr);
+	vkFreeMemory(vkh::GContext.lDevice.device, vBufferMemory, nullptr);
 
-	vkDestroyBuffer(rc->lDevice.device, indexBuffer, nullptr);
-	vkFreeMemory(rc->lDevice.device, indexBufferMemory, nullptr);
+	vkDestroyBuffer(vkh::GContext.lDevice.device, indexBuffer, nullptr);
+	vkFreeMemory(vkh::GContext.lDevice.device, indexBufferMemory, nullptr);
 
 
 }

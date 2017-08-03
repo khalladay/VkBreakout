@@ -75,6 +75,8 @@ namespace vkh
 
 	};
 
+	extern vkh::VkhContext GContext;
+
 	struct VkhMaterial
 	{
 		VkPipeline gfxPipeline;

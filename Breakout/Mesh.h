@@ -36,8 +36,8 @@ public:
 		}
 	};
 
-	Mesh(const std::vector<Vertex>& verts, class Renderer* renderer);
-	Mesh(const std::vector<Vertex>& verts, const std::vector<UINT16> indices, class Renderer* renderer);
+	Mesh(const std::vector<Vertex>& verts);
+	Mesh(const std::vector<Vertex>& verts, const std::vector<UINT16> indices);
 
 	~Mesh();
 
