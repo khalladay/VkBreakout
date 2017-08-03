@@ -6,7 +6,7 @@
 #include "MeshManager.h"
 #include "os_support.h"
 
-float clamp(float a, float min, float max)
+inline float clamp(float a, float min, float max)
 {
 	return a < min ? min : (a > max ? max : a);
 }
@@ -28,14 +28,14 @@ BreakoutGame::BreakoutGame()
 
 	//paddle/ball initialization
 	{
-		paddlePrimHdl = PM->NewPrimitive(MeshManager::Get()->GetRectMesh());
-		ballPrimHdl = PM->NewPrimitive(MeshManager::Get()->GetCircleMesh());
+		paddlePrimHdl = NewPrimitive(MeshManager::Get()->GetRectMesh());
+		ballPrimHdl = NewPrimitive(MeshManager::Get()->GetCircleMesh());
 
-		PM->SetPrimPos(ballPrimHdl, ballPos);
-		PM->SetPrimScale(ballPrimHdl, glm::vec3(ballRad * 2, ballRad * 2, ballRad * 2));
+		SetPrimPos(ballPrimHdl, ballPos);
+		SetPrimScale(ballPrimHdl, glm::vec3(ballRad * 2, ballRad * 2, ballRad * 2));
 
-		PM->SetPrimPos(paddlePrimHdl, paddlePos);
-		PM->SetPrimScale(paddlePrimHdl, paddleScale);
+		SetPrimPos(paddlePrimHdl, paddlePos);
+		SetPrimScale(paddlePrimHdl, paddleScale);
 	}
 
 	//construct brick field
@@ -45,12 +45,12 @@ BreakoutGame::BreakoutGame()
 
 		for (int i = 0; i < numBricks; ++i)
 		{
-			int b = PM->NewPrimitive(MeshManager::Get()->GetRectMesh());
+			int b = NewPrimitive(MeshManager::Get()->GetRectMesh());
 			glm::vec3 p = glm::vec3(-110 + (i % 10) * 25, -50 + (i / 10) * 10, 0);
 
-			PM->SetPrimPos(b, p);
-			PM->SetPrimCol(b, glm::vec4((i / 10) / 5.0f, (i % 10) / 10.0f, 1.0f, 1.0f));
-			PM->SetPrimScale(b, glm::vec3(10, 3, 10));
+			SetPrimPos(b, p);
+			SetPrimCol(b, glm::vec4((i / 10) / 5.0f, (i % 10) / 10.0f, 1.0f, 1.0f));
+			SetPrimScale(b, glm::vec3(10, 3, 10));
 			brickPrimHdls[i] = b;
 		}
 	}
@@ -62,11 +62,11 @@ BreakoutGame::~BreakoutGame()
 	{
 		if (brickPrimHdls[i] > -1)
 		{
-			PM->DestroyPrimitive(brickPrimHdls[i]);
+			DestroyPrimitive(brickPrimHdls[i]);
 		}
 	}
-	PM->DestroyPrimitive(paddlePrimHdl);
-	PM->DestroyPrimitive(ballPrimHdl);
+	DestroyPrimitive(paddlePrimHdl);
+	DestroyPrimitive(ballPrimHdl);
 
 	delete[] brickPrimHdls;
 
@@ -74,8 +74,8 @@ BreakoutGame::~BreakoutGame()
 
 bool BreakoutGame::BallIntersectsRect(int rectPrimHdl)
 {
-	glm::vec3 rectPos = PM->GetPrimPos(rectPrimHdl); 
-	glm::vec3 rectScale = PM->GetPrimScale(rectPrimHdl);
+	glm::vec3 rectPos = GetPrimPos(rectPrimHdl); 
+	glm::vec3 rectScale = GetPrimScale(rectPrimHdl);
 
 	float left = rectPos.x - rectScale.x;
 	float right = rectPos.x + rectScale.x;
@@ -134,15 +134,15 @@ void BreakoutGame::tick(float deltaTime)
 	{
 		if (brickPrimHdls[i] > -1 && BallIntersectsRect(brickPrimHdls[i]))
 		{
-			glm::vec3 brickPos = PM->GetPrimPos(brickPrimHdls[i]);  
-			glm::vec3 brickScale = PM->GetPrimScale(brickPrimHdls[i]);
+			glm::vec3 brickPos = GetPrimPos(brickPrimHdls[i]);  
+			glm::vec3 brickScale = GetPrimScale(brickPrimHdls[i]);
 			
 			ballPos -= ballVel * 0.5f;
-			PM->SetPrimPos(ballPrimHdl, ballPos);
+			SetPrimPos(ballPrimHdl, ballPos);
 			
 			ballVel.y *= -1;
 			
-			PM->DestroyPrimitive(brickPrimHdls[i]);
+			DestroyPrimitive(brickPrimHdls[i]);
 			brickPrimHdls[i] = -1;
 		}
 	}
@@ -167,7 +167,7 @@ void BreakoutGame::tick(float deltaTime)
 		ballVel.y *= -1;
 	}
 
-	PM->SetPrimPos(ballPrimHdl, ballPos);
+	SetPrimPos(ballPrimHdl, ballPos);
 
 
 	//move paddle
@@ -181,12 +181,12 @@ void BreakoutGame::tick(float deltaTime)
 	}
 
 	paddlePos.x = clamp(paddlePos.x, -screenWOrtho + paddleScale.x, screenWOrtho - paddleScale.x);
-	PM->SetPrimPos(paddlePrimHdl, paddlePos);
+	SetPrimPos(paddlePrimHdl, paddlePos);
 }
 
 void BreakoutGame::draw(Renderer* renderer) const
 {
-	PM->SubmitPrimitives(renderer);
+	SubmitPrimitives(renderer);
 }
 
 bool BreakoutGame::isGameOver() const

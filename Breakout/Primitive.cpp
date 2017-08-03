@@ -2,52 +2,49 @@
 #include "Mesh.h"
 #include "vkh.h"
 #include "Renderer.h"
+#include <map>
 
-
-PrimitiveManager* PrimitiveManager::Get()
+struct PrimitiveGameState
 {
-	static PrimitiveManager* instance = nullptr;
-	if (!instance)
-	{
-		instance = new PrimitiveManager();
-	}
+	std::map<int, Primitive> primitives;
+	PrimitiveUniformObject* uniformData;
+};
 
-	return instance;
+static PrimitiveGameState primitiveState;
+
+
+
+void DestroyPrimitive(int handle)
+{
+	primitiveState.primitives.erase(handle);
 }
 
-void PrimitiveManager::DestroyPrimitive(int handle)
-{
-
-	primitives.erase(handle);
-	primitiveMeshes.erase(handle);
-}
-
-void PrimitiveManager::SubmitPrimitives(Renderer* renderer)
+void SubmitPrimitives(Renderer* renderer)
 {
 	size_t uboAlignment = renderer->GetVkContext().gpu.deviceProps.limits.minUniformBufferOffsetAlignment;
 	size_t dynamicAlignment = (sizeof(PrimitiveUniformObject) / uboAlignment) * uboAlignment + ((sizeof(PrimitiveUniformObject) % uboAlignment) > 0 ? uboAlignment : 0);
 
-	size_t bufferSize = primitives.size() * dynamicAlignment;
+	size_t bufferSize = primitiveState.primitives.size() * dynamicAlignment;
 
 	static int lastBufferSize = -1;
 
-	if (!uniformData)
+	if (!primitiveState.uniformData)
 	{
-		uniformData = (PrimitiveUniformObject*)_aligned_malloc(bufferSize, dynamicAlignment);
+		primitiveState.uniformData = (PrimitiveUniformObject*)_aligned_malloc(bufferSize, dynamicAlignment);
 		lastBufferSize = bufferSize;
 	}
 	else if (bufferSize > lastBufferSize)
 	{
-		uniformData = (PrimitiveUniformObject*)_aligned_realloc(uniformData, bufferSize, dynamicAlignment);
+		primitiveState.uniformData = (PrimitiveUniformObject*)_aligned_realloc(primitiveState.uniformData, bufferSize, dynamicAlignment);
 		lastBufferSize = bufferSize;
 	}
 
 	std::vector<Mesh*> meshes;
 
 	int idx = 0;
-	char* uniformChar = (char*)uniformData;
+	char* uniformChar = (char*)primitiveState.uniformData;
 
-	for (const auto& prim : primitives)
+	for (const auto& prim : primitiveState.primitives)
 	{
 		PrimitiveUniformObject puo;
 		puo.model = renderer->VIEW_PROJECTION * (glm::translate(prim.second.pos) * glm::scale(prim.second.scale));
@@ -55,61 +52,52 @@ void PrimitiveManager::SubmitPrimitives(Renderer* renderer)
 
 		memcpy(&uniformChar[idx * dynamicAlignment], &puo, sizeof(PrimitiveUniformObject));
 		idx++;
-		
-		meshes.push_back(primitiveMeshes[prim.first]);
+
+		meshes.push_back(prim.second.meshResource);
 	}
 
-	renderer->draw(uniformData, meshes);
+	renderer->draw(primitiveState.uniformData, meshes);
+
 }
 
 
-int PrimitiveManager::NewPrimitive(Mesh* meshResource)
+int NewPrimitive(Mesh* meshResource)
 {
 	static int next_prim_id = 0;
 
-	PrimitiveManager::Primitive p;
+	Primitive p;
 	p.col = glm::vec4(1, 1, 1, 1);
 	p.pos = glm::vec3(0, 0, 0);
 	p.scale = glm::vec3(1, 1, 1);
+	p.meshResource = meshResource;
 
-	primitives.emplace(next_prim_id, p);
-	primitiveMeshes.emplace(next_prim_id, meshResource);
+	primitiveState.primitives.emplace(next_prim_id, p);
 
 	next_prim_id++;
 	return next_prim_id - 1;
 }
 
-void PrimitiveManager::SetPrimScale(int hdl, glm::vec3 scale)
+void SetPrimScale(int hdl, glm::vec3 scale)
 {
-	primitives[hdl].scale = scale;
+	primitiveState.primitives[hdl].scale = scale;
 }
 
-void PrimitiveManager::SetPrimPos(int hdl, glm::vec3 pos)
+void SetPrimPos(int hdl, glm::vec3 pos)
 {
-	primitives[hdl].pos = pos;
+	primitiveState.primitives[hdl].pos = pos;
 }
 
-glm::vec3 PrimitiveManager::GetPrimPos(int hdl)
+glm::vec3 GetPrimPos(int hdl)
 {
-	return primitives[hdl].pos;
+	return primitiveState.primitives[hdl].pos;
 }
 
-glm::vec3 PrimitiveManager::GetPrimScale(int hdl)
+glm::vec3 GetPrimScale(int hdl)
 {
-	return primitives[hdl].scale;
+	return primitiveState.primitives[hdl].scale;
 }
 
-void PrimitiveManager::SetPrimCol(int hdl, glm::vec4 col)
+void SetPrimCol(int hdl, glm::vec4 col)
 {
-	primitives[hdl].col = col;
-}
-
-PrimitiveManager::PrimitiveManager()
-{
-
-}
-
-PrimitiveManager::~PrimitiveManager()
-{
-
+	primitiveState.primitives[hdl].col = col;
 }
