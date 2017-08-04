@@ -1,45 +1,36 @@
 #pragma once
 #include "vkh.h"
 #include <vector>
-
+#include "Primitive.h"
 #include "stdafx.h"
 
-class Renderer
+namespace Renderer
 {
-public:
-	Renderer(HINSTANCE Instance, HWND wndHdl, const char* applicationName);
-	void draw(const struct PrimitiveUniformObject* uniformData, const std::vector<int> primMeshes);
+	typedef struct
+	{
+		//the input layout for all shaders used
+		VkDescriptorSetLayout		descriptorSetLayout;
+		VkDescriptorSet				descriptorSet;
+		vkh::VkhMaterial			blockMaterial;
 
-	~Renderer();
+		VkRenderPass renderPass; //only 1 render pass for this application
+		std::vector<VkFramebuffer>	swapChainFramebuffers;
 
-	//we don't need a full camera object, so we'll store the ortho matrix here
-	glm::mat4 VIEW_PROJECTION;
-	int screenW;
-	int screenH;
-	void handleScreenResize();
+		//Because this application is simple enough, we use a 
+		//single uniform buffer for the whole application
+		VkBuffer uniformBuffer;
+		VkDeviceMemory uniformBufferMemory;
 
-private:
-	void createPipelines();
-	void createDescriptorSetLayout();
-	void createDescriptorSet();
+		glm::mat4 VIEW_PROJECTION;
+		int screenW;
+		int screenH;
 
-	vkh::VkhContext context;
-	vkh::VkhMaterial blockMaterial;
+	}AppRenderData;
 
+	extern AppRenderData appRenderData;
 
-	VkRenderPass renderPass; //only 1 render pass for this application
-	std::vector<VkFramebuffer>	swapChainFramebuffers;
+	void initializeRendering(HINSTANCE Instance, HWND wndHdl, const char* applicationName);
+	void handleScreenResize(AppRenderData& rd);
+	void draw(const Primitive::PrimitiveUniformObject* uniformData, const std::vector<int> primMeshes);
 
-	//the input layout for all shaders used
-	VkDescriptorSetLayout		descriptorSetLayout;
-	VkDescriptorSet				descriptorSet;
-
-	//Because this application is simple enough, we use a single uniform buffer for the whole application
-	//We can choose between three different ways to use this buffer, for performance testing: 
-	//  1. Allocating a buffer large enough to hold all objects' uniforms, and getting offsets into that buffer per primitive
-	//  2. Not using this buffer at all, and supplying the data using push constants. 
-	VkBuffer uniformBuffer;
-	VkDeviceMemory uniformBufferMemory;
-
-	
-};
+}

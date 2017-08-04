@@ -1,17 +1,17 @@
 #pragma once
 #include "stdafx.h"
 
-struct PrimitiveUniformObject
-{
-	glm::mat4 model;
-	glm::vec4 color;
-};
-
-class Renderer;
 
 namespace Primitive
 {
-	struct Primitive;
+	struct PrimitiveUniformObject
+	{
+		glm::mat4 model;
+		glm::vec4 color;
+	};
+
+
+	struct PrimitiveInstance;
 
 	int newPrimitive(int meshHdl);
 	void destroyPrimitive(int handle);
@@ -25,6 +25,6 @@ namespace Primitive
 
 	void destroyAllPrimitives();
 
-	void submitPrimitives(Renderer* renderer);
+	void submitPrimitives();
 }
 

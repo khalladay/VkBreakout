@@ -202,9 +202,9 @@ namespace Breakout
 		setPrimPos(state.paddlePrimHdl, state.paddlePos);
 	}
 
-	void draw(Renderer* renderer)
+	void draw()
 	{
-		submitPrimitives(renderer);
+		submitPrimitives();
 	}
 
 	bool isGameOver()

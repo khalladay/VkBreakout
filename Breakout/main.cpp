@@ -5,14 +5,12 @@
 #include "Renderer.h"
 #include "BreakoutGame.h"
 
-Renderer* renderer;
 void mainLoop();
 
 int CALLBACK WinMain(HINSTANCE Instance, HINSTANCE pInstance, LPSTR cmdLine, int showCode)
 {
 	HWND wndHdl = OS::makeWindow(Instance, APP_NAME, SCREEN_W, SCREEN_H);
-
-	renderer = new Renderer(Instance, wndHdl, APP_NAME);
+	Renderer::initializeRendering(Instance, wndHdl, APP_NAME);
 
 	Breakout::newGame();
 
@@ -57,6 +55,6 @@ void mainLoop()
 		}
 
 		Breakout::tick(deltaTime/100.0f);
-		Breakout::draw(renderer);
+		Breakout::draw();
 	}
 }

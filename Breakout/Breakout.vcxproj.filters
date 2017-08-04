@@ -47,14 +47,14 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="compile_all_shaders.bat">
-      <Filter>Source Files</Filter>
-    </None>
     <None Include="shaders\fragFlatColor.frag">
       <Filter>shaders</Filter>
     </None>
     <None Include="shaders\vertColorPassthrough.vert">
       <Filter>shaders</Filter>
+    </None>
+    <None Include="compile_all_shaders.bat">
+      <Filter>Source Files</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

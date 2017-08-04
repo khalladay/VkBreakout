@@ -7,7 +7,7 @@
 
 namespace Primitive
 {
-	struct Primitive
+	struct PrimitiveInstance
 	{
 		glm::vec3 pos;
 		glm::vec3 scale;
@@ -17,7 +17,7 @@ namespace Primitive
 
 	struct PrimitiveGameState
 	{
-		std::map<int, Primitive> primitives;
+		std::map<int, PrimitiveInstance> primitives;
 		PrimitiveUniformObject* uniformData;
 	};
 
@@ -35,7 +35,7 @@ namespace Primitive
 		primitiveState.primitives.clear();
 	}
 
-	void submitPrimitives(Renderer* renderer)
+	void submitPrimitives()
 	{
 		size_t uboAlignment = vkh::GContext.gpu.deviceProps.limits.minUniformBufferOffsetAlignment;
 		size_t dynamicAlignment = (sizeof(PrimitiveUniformObject) / uboAlignment) * uboAlignment + ((sizeof(PrimitiveUniformObject) % uboAlignment) > 0 ? uboAlignment : 0);
@@ -63,7 +63,7 @@ namespace Primitive
 		for (const auto& prim : primitiveState.primitives)
 		{
 			PrimitiveUniformObject puo;
-			puo.model = renderer->VIEW_PROJECTION * (glm::translate(prim.second.pos) * glm::scale(prim.second.scale));
+			puo.model = Renderer::appRenderData.VIEW_PROJECTION * (glm::translate(prim.second.pos) * glm::scale(prim.second.scale));
 			puo.color = prim.second.col;
 
 			memcpy(&uniformChar[idx * dynamicAlignment], &puo, sizeof(PrimitiveUniformObject));
@@ -71,8 +71,8 @@ namespace Primitive
 
 			meshes.push_back(prim.second.meshId);
 		}
-
-		renderer->draw(primitiveState.uniformData, meshes);
+	
+		Renderer::draw(primitiveState.uniformData, meshes);
 
 	}
 
@@ -81,7 +81,7 @@ namespace Primitive
 	{
 		static int next_prim_id = 0;
 
-		Primitive p;
+		PrimitiveInstance p;
 		p.col = glm::vec4(1, 1, 1, 1);
 		p.pos = glm::vec3(0, 0, 0);
 		p.scale = glm::vec3(1, 1, 1);
