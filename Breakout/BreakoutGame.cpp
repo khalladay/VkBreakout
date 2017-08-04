@@ -3,7 +3,7 @@
 
 #include "Renderer.h"
 #include "Primitive.h"
-#include "MeshManager.h"
+#include "Mesh.h"
 #include "os_support.h"
 
 #include "vkh.h"
@@ -44,7 +44,7 @@ namespace Breakout
 			}
 
 			destroyAllPrimitives();
-			state.gameOver = false;
+			state.gameOver = false; 
 		}
 
 		//setup game config
@@ -61,11 +61,11 @@ namespace Breakout
 
 		//paddle/ball initialization
 		{
-			state.paddlePrimHdl = newPrimitive(MeshManager::Get()->GetRectMesh());
-			state.ballPrimHdl = newPrimitive(MeshManager::Get()->GetCircleMesh());
+			state.paddlePrimHdl = newPrimitive(GetRectMesh());
+			state.ballPrimHdl = newPrimitive(GetCircleMesh());
 
 			setPrimPos(state.ballPrimHdl, state.ballPos);
-			int scale = state.ballRad * 2;
+			int scale = (int)(state.ballRad * 2);
 			setPrimScale(state.ballPrimHdl, glm::vec3(scale, scale, scale));
 
 			setPrimPos(state.paddlePrimHdl, state.paddlePos);
@@ -79,7 +79,7 @@ namespace Breakout
 
 			for (int i = 0; i < state.numBricks; ++i)
 			{
-				int b = newPrimitive(MeshManager::Get()->GetRectMesh());
+				int b = newPrimitive(GetRectMesh());
 				glm::vec3 p = glm::vec3(-110 + (i % 10) * 25, -50 + (i / 10) * 10, 0);
 
 				setPrimPos(b, p);

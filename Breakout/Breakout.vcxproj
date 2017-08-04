@@ -135,7 +135,6 @@
     <ClCompile Include="os_support.cpp" />
     <ClCompile Include="Primitive.cpp" />
     <ClCompile Include="Renderer.cpp" />
-    <ClCompile Include="MeshManager.cpp" />
     <ClCompile Include="vkh.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -145,7 +144,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BreakoutGame.h" />
-    <ClInclude Include="MeshManager.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="file_utils.h" />
     <ClInclude Include="Mesh.h" />

@@ -12,7 +12,7 @@ namespace Primitive
 		glm::vec3 pos;
 		glm::vec3 scale;
 		glm::vec4 col;
-		class Mesh* meshResource;
+		int meshId;
 	};
 
 	struct PrimitiveGameState
@@ -47,15 +47,15 @@ namespace Primitive
 		if (!primitiveState.uniformData)
 		{
 			primitiveState.uniformData = (PrimitiveUniformObject*)_aligned_malloc(bufferSize, dynamicAlignment);
-			lastBufferSize = bufferSize;
+			lastBufferSize = (int)bufferSize;
 		}
 		else if (bufferSize > lastBufferSize)
 		{
 			primitiveState.uniformData = (PrimitiveUniformObject*)_aligned_realloc(primitiveState.uniformData, bufferSize, dynamicAlignment);
-			lastBufferSize = bufferSize;
+			lastBufferSize = (int)bufferSize;
 		}
 
-		std::vector<Mesh*> meshes;
+		std::vector<int> meshes;
 
 		int idx = 0;
 		char* uniformChar = (char*)primitiveState.uniformData;
@@ -69,7 +69,7 @@ namespace Primitive
 			memcpy(&uniformChar[idx * dynamicAlignment], &puo, sizeof(PrimitiveUniformObject));
 			idx++;
 
-			meshes.push_back(prim.second.meshResource);
+			meshes.push_back(prim.second.meshId);
 		}
 
 		renderer->draw(primitiveState.uniformData, meshes);
@@ -77,7 +77,7 @@ namespace Primitive
 	}
 
 
-	int newPrimitive(Mesh* meshResource)
+	int newPrimitive(int meshId)
 	{
 		static int next_prim_id = 0;
 
@@ -85,7 +85,7 @@ namespace Primitive
 		p.col = glm::vec4(1, 1, 1, 1);
 		p.pos = glm::vec3(0, 0, 0);
 		p.scale = glm::vec3(1, 1, 1);
-		p.meshResource = meshResource;
+		p.meshId = meshId;
 
 		primitiveState.primitives.emplace(next_prim_id, p);
 

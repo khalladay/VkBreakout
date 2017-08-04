@@ -41,7 +41,7 @@ void Renderer::handleScreenResize()
 
 }
 
-void Renderer::draw(const struct PrimitiveUniformObject* uniformData, const std::vector<class Mesh*> primMeshes)
+void Renderer::draw(const struct PrimitiveUniformObject* uniformData, const std::vector<int> primMeshes)
 {
 	//max size of buffer we allocated
 	assert(primMeshes.size() < 256);
@@ -108,14 +108,15 @@ void Renderer::draw(const struct PrimitiveUniformObject* uniformData, const std:
 	vkCmdBindPipeline(GContext.commandBuffers[imageIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, blockMaterial.gfxPipeline);
 	for (int i = 0; i < primMeshes.size(); ++i)
 	{
+		Mesh* mesh = GetMeshData(primMeshes[i]);
 		uint32_t dynamicOffset = i * static_cast<uint32_t>(dynamicAlignment);
-		VkBuffer vertexBuffers[] = { primMeshes[i]->vBuffer };
+		VkBuffer vertexBuffers[] = { mesh->vBuffer };
 		VkDeviceSize offsets[] = { 0 };
 		vkCmdBindDescriptorSets(GContext.commandBuffers[imageIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, blockMaterial.pipelineLayout, 0, 1, &descriptorSet, 1, &dynamicOffset);
 
 		vkCmdBindVertexBuffers(GContext.commandBuffers[imageIndex], 0, 1, vertexBuffers, offsets);
-		vkCmdBindIndexBuffer(GContext.commandBuffers[imageIndex], primMeshes[i]->indexBuffer, 0, VK_INDEX_TYPE_UINT16);
-		vkCmdDrawIndexed(GContext.commandBuffers[imageIndex], static_cast<uint32_t>(primMeshes[i]->indexCount), 1, 0, 0, 0);
+		vkCmdBindIndexBuffer(GContext.commandBuffers[imageIndex], mesh->indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+		vkCmdDrawIndexed(GContext.commandBuffers[imageIndex], static_cast<uint32_t>(mesh->indexCount), 1, 0, 0, 0);
 	}
 
 	vkCmdEndRenderPass(GContext.commandBuffers[imageIndex]);
@@ -264,8 +265,8 @@ void Renderer::createPipelines()
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
 	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
-	auto bindingDescription = Mesh::Vertex::getBindingDescription();
-	auto attributeDescriptions = Mesh::Vertex::getAttributeDescriptions();
+	auto bindingDescription = getVertexBindingDescription();
+	auto attributeDescriptions = getVertexAttributeDescriptions();
 
 	vertexInputInfo.vertexBindingDescriptionCount = 1;
 	vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());

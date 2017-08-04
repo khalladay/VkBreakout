@@ -45,9 +45,6 @@
     <ClCompile Include="vkh.cpp">
       <Filter>Source Files\Vulkan</Filter>
     </ClCompile>
-    <ClCompile Include="MeshManager.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="compile_all_shaders.bat">
@@ -84,9 +81,6 @@
     </ClInclude>
     <ClInclude Include="vkh.h">
       <Filter>Source Files\Vulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="MeshManager.h">
-      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

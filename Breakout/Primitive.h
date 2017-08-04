@@ -8,13 +8,12 @@ struct PrimitiveUniformObject
 };
 
 class Renderer;
-class Mesh;
 
 namespace Primitive
 {
 	struct Primitive;
 
-	int newPrimitive(Mesh* meshResource);
+	int newPrimitive(int meshHdl);
 	void destroyPrimitive(int handle);
 
 	void setPrimScale(int hdl, glm::vec3 scale);

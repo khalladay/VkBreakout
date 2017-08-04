@@ -8,7 +8,7 @@ class Renderer
 {
 public:
 	Renderer(HINSTANCE Instance, HWND wndHdl, const char* applicationName);
-	void draw(const struct PrimitiveUniformObject* uniformData, const std::vector<class Mesh*> primMeshes);
+	void draw(const struct PrimitiveUniformObject* uniformData, const std::vector<int> primMeshes);
 
 	~Renderer();
 
@@ -23,6 +23,7 @@ private:
 	void createDescriptorSetLayout();
 	void createDescriptorSet();
 
+	vkh::VkhContext context;
 	vkh::VkhMaterial blockMaterial;
 
 
