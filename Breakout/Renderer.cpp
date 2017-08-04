@@ -187,9 +187,7 @@ void Renderer::createDescriptorSet()
 	size_t dynamicAlignment = (sizeof(PrimitiveUniformObject) / uboAlignment) * uboAlignment + ((sizeof(PrimitiveUniformObject) % uboAlignment) > 0 ? uboAlignment : 0);
 
 	
-#if USE_UNIFORM_BUFFER
 	VkDeviceSize bufferSize = dynamicAlignment * 256;
-#endif
 
 	CreateBuffer(uniformBuffer,
 		uniformBufferMemory,

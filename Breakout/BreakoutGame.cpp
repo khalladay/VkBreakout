@@ -44,6 +44,7 @@ namespace Breakout
 			}
 
 			destroyAllPrimitives();
+			state.gameOver = false;
 		}
 
 		//setup game config

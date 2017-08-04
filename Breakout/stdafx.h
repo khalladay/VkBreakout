@@ -8,7 +8,3 @@
 #define APP_NAME "Vulkan Breakout"
 #define SCREEN_W 1280
 #define SCREEN_H 720
-
-
-#define USE_UNIFORM_BUFFER 1
-//#define USE_PUSH_CONSTANTS 1
