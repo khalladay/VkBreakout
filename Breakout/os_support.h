@@ -103,7 +103,7 @@ namespace OS
 
 	void shutdown();
 
-	long long getMilliseconds();
+	double getMilliseconds();
 	int getScreenH();
 	int getScreenW();
 }
