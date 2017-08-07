@@ -23,21 +23,21 @@ void mainLoop()
 {
 	bool running = true;
 
-	long long lastFrame = OS::getMilliseconds();
+	double lastFrame = OS::getMilliseconds();
 	
 	double fpsAccum = 0.0;
 	int count = 0;
 
 	while (running)
 	{
-		long long thisFrameTime = OS::getMilliseconds();
-		long long deltaTime = (thisFrameTime - lastFrame);
+		double thisFrameTime = OS::getMilliseconds();
+		double deltaTime = (thisFrameTime - lastFrame);
 		lastFrame = thisFrameTime;
-		fpsAccum += deltaTime * 100.0f;
+		fpsAccum += deltaTime;
 
-		if (count++ == 49)
+		if (count++ == 999)
 		{
-			printf("Frametime (avg of past 50 frames): %f ms\n", fpsAccum / 50.0f);
+			printf("Frametime (avg of past 1000 frames): %f ms\n", fpsAccum / 1000.0f);
 			count = 0;
 			fpsAccum = 0;
 		}
