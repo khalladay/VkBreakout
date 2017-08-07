@@ -10,7 +10,6 @@ namespace Renderer
 	AppRenderData appRenderData;
 
 	void createDescriptorSetLayout(AppRenderData& rs);
-	void createDescriptorSet(AppRenderData& rs);
 	void createPipelines(AppRenderData& rs);
 
 	void initializeRendering(HINSTANCE Instance, HWND wndHdl, const char* applicationName)
@@ -19,8 +18,8 @@ namespace Renderer
 		CreateColorOnlyRenderPass(appRenderData.renderPass, GContext.swapChain, GContext.lDevice.device);
 		CreateFramebuffers(appRenderData.swapChainFramebuffers, GContext.swapChain, appRenderData.renderPass, GContext.lDevice.device);
 	
+		//needed for creating pipeline layout
 		createDescriptorSetLayout(appRenderData);
-		//createDescriptorSet(appRenderData);
 		createPipelines(appRenderData);
 		handleScreenResize(appRenderData);
 
@@ -49,48 +48,6 @@ namespace Renderer
 
 		VkResult res = vkCreateDescriptorSetLayout(GContext.lDevice.device, &layoutInfo, nullptr, &rs.descriptorSetLayout);
 		assert(res == VK_SUCCESS);
-	}
-
-	void Renderer::createDescriptorSet(AppRenderData& rs)
-	{
-		VkResult res;
-	
-		VkDescriptorSetLayout layouts[] = { rs.descriptorSetLayout };
-		VkDescriptorSetAllocateInfo allocInfo = {};
-		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-		allocInfo.descriptorPool = GContext.descriptorPool;
-		allocInfo.descriptorSetCount = 1;
-		allocInfo.pSetLayouts = layouts;
-	
-		res = vkAllocateDescriptorSets(GContext.lDevice.device, &allocInfo, &rs.descriptorSet);
-		
-
-		VkBufferCreateInfo createInfo = {};
-		createInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-		createInfo.size = sizeof(Primitive::PrimitiveUniformObject);
-		createInfo.usage = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-
-		VkBuffer emptyBuffer;
-		vkCreateBuffer(GContext.lDevice.device, &createInfo, nullptr, &emptyBuffer);
-
-		VkDescriptorBufferInfo bufferInfo = {};
-		bufferInfo.offset = 0;
-		bufferInfo.range = sizeof(Primitive::PrimitiveUniformObject);
-		bufferInfo.buffer = emptyBuffer;
-
-		//The configuration of descriptors is updated using the vkUpdateDescriptorSets function, which takes an array of VkWriteDescriptorSet structs as parameter.
-		VkWriteDescriptorSet descriptorWrite = {};
-		descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		descriptorWrite.dstSet = rs.descriptorSet;
-		descriptorWrite.dstBinding = 0; //refers to binding in shader
-		descriptorWrite.dstArrayElement = 0;
-		descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		descriptorWrite.descriptorCount = 1;
-		descriptorWrite.pBufferInfo = &bufferInfo;
-		descriptorWrite.pImageInfo = nullptr; // Optional
-		descriptorWrite.pTexelBufferView = nullptr; // Optional
-	 //
-		vkUpdateDescriptorSets(GContext.lDevice.device, 1, &descriptorWrite, 0, nullptr);
 	}
 
 	void createPipelines(AppRenderData& rs)
@@ -289,9 +246,6 @@ namespace Renderer
 				0,
 				sizeof(Primitive::PrimitiveUniformObject),
 				&uniformData[i]);
-
-
-		//	vkCmdBindDescriptorSets(Gctxt.commandBuffers[imageIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, appRenderData.blockMaterial.pipelineLayout, 0, 1, &appRenderData.descriptorSet, 1, NULL);
 	
 			vkCmdBindVertexBuffers(Gctxt.commandBuffers[imageIndex], 0, 1, vertexBuffers, offsets);
 			vkCmdBindIndexBuffer(Gctxt.commandBuffers[imageIndex], mesh->indexBuffer, 0, VK_INDEX_TYPE_UINT16);
