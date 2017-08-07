@@ -33,7 +33,7 @@ void mainLoop()
 		long long thisFrameTime = OS::getMilliseconds();
 		long long deltaTime = (thisFrameTime - lastFrame);
 		lastFrame = thisFrameTime;
-		fpsAccum += deltaTime * 10.0f;
+		fpsAccum += deltaTime * 100.0f;
 
 		if (count++ == 49)
 		{
