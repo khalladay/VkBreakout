@@ -75,7 +75,8 @@ namespace vkh
 
 	};
 
-	extern vkh::VkhContext GContext;
+	extern VkhContext GContext;
+	VkhContext& GetGContext();
 
 	struct VkhMaterial
 	{

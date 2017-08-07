@@ -37,25 +37,23 @@ namespace Primitive
 
 	void submitPrimitives()
 	{
-		size_t uboAlignment = vkh::GContext.gpu.deviceProps.limits.minUniformBufferOffsetAlignment;
-		size_t dynamicAlignment = (sizeof(PrimitiveUniformObject) / uboAlignment) * uboAlignment + ((sizeof(PrimitiveUniformObject) % uboAlignment) > 0 ? uboAlignment : 0);
-
-		size_t bufferSize = primitiveState.primitives.size() * dynamicAlignment;
+		size_t bufferSize = primitiveState.primitives.size() * sizeof(PrimitiveUniformObject);
 
 		static int lastBufferSize = -1;
 
 		if (!primitiveState.uniformData)
 		{
-			primitiveState.uniformData = (PrimitiveUniformObject*)_aligned_malloc(bufferSize, dynamicAlignment);
+			primitiveState.uniformData = (PrimitiveUniformObject*)malloc(bufferSize);
 			lastBufferSize = (int)bufferSize;
 		}
 		else if (bufferSize > lastBufferSize)
 		{
-			primitiveState.uniformData = (PrimitiveUniformObject*)_aligned_realloc(primitiveState.uniformData, bufferSize, dynamicAlignment);
+			primitiveState.uniformData = (PrimitiveUniformObject*)realloc(primitiveState.uniformData, bufferSize);
 			lastBufferSize = (int)bufferSize;
 		}
 
-		std::vector<int> meshes;
+		static std::vector<int> meshes;
+		meshes.clear();
 
 		int idx = 0;
 		char* uniformChar = (char*)primitiveState.uniformData;
@@ -66,12 +64,16 @@ namespace Primitive
 			puo.model = Renderer::appRenderData.VIEW_PROJECTION * (glm::translate(prim.second.pos) * glm::scale(prim.second.scale));
 			puo.color = prim.second.col;
 
-			memcpy(&uniformChar[idx * dynamicAlignment], &puo, sizeof(PrimitiveUniformObject));
+			//memcpy(&uniformChar[idx * 256], &puo, sizeof(puo));
+
+			primitiveState.uniformData[idx] = puo;
 			idx++;
 
 			meshes.push_back(prim.second.meshId);
 		}
 	
+	//	_CrtDumpMemoryLeaks();
+		
 		Renderer::draw(primitiveState.uniformData, meshes);
 
 	}

@@ -10,6 +10,10 @@
 namespace vkh
 {
 	VkhContext GContext;
+	VkhContext& GetGContext()
+	{
+		return GContext;
+	}
 
 	VkDebugReportCallbackEXT callback;
 
@@ -37,7 +41,7 @@ namespace vkh
 		CreateCommandPool(outContext.commandPool, outContext.lDevice.device, outContext.gpu);
 		CreateCommandBuffers(outContext.commandBuffers, outContext.commandPool, outContext.swapChain.imageViews.size(), outContext.lDevice.device);
 
-		CreateDescriptorPool(outContext.descriptorPool, outContext.lDevice.device, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 5); //MAX_DESCRIPTORS
+		CreateDescriptorPool(outContext.descriptorPool, outContext.lDevice.device, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 5); //MAX_DESCRIPTORS
 
 		outContext.frameFences = new VkFence[outContext.swapChain.imageViews.size()];// (VkFence*)malloc(sizeof(VkFence) * outContext.swapChain.imageViews.size());
 		for (int i = 0; i < outContext.swapChain.imageViews.size(); ++i)

@@ -1,7 +1,7 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
-layout(set = 0, binding = 0) uniform PER_OBJECT 
+layout(push_constant) uniform PER_OBJECT 
 { 
 	mat4 mvp; 
 	vec4 col;
