@@ -7,6 +7,8 @@
 #include "file_utils.h"
 #include <limits>
 
+#define NDEBUG 1
+
 namespace vkh
 {
 	VkhContext GContext;
@@ -73,6 +75,7 @@ namespace vkh
 		std::vector<const char*> validationLayers;
 		std::vector<bool> layersAvailable;
 		//check for available validation layer
+
 #ifdef NDEBUG
 		const bool enableValidationLayers = false;
 #else
