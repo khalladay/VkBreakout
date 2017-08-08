@@ -15,7 +15,7 @@ namespace Primitive
 		VkBuffer uniformBuffer;
 		VkDeviceMemory bufferMem;
 		VkDescriptorSet descSet;
-		void* mapped;
+	//	void* mapped;
 		int meshId;
 	};
 
@@ -34,7 +34,7 @@ namespace Primitive
 		vkFreeDescriptorSets(vkh::GContext.lDevice.device, vkh::GContext.descriptorPool , 1, &primitiveState.primitives[handle].descSet);
 		vkFreeMemory(vkh::GContext.lDevice.device, primitiveState.primitives[handle].bufferMem, nullptr);
 		vkDestroyBuffer(vkh::GContext.lDevice.device, primitiveState.primitives[handle].uniformBuffer, nullptr);
-		vkUnmapMemory(vkh::GContext.lDevice.device, primitiveState.primitives[handle].bufferMem);
+	//	vkUnmapMemory(vkh::GContext.lDevice.device, primitiveState.primitives[handle].bufferMem);
 
 		primitiveState.primitives.erase(handle);
 		
@@ -44,7 +44,7 @@ namespace Primitive
 	{
 		for (const auto& prim : primitiveState.primitives)
 		{
-			vkUnmapMemory(vkh::GContext.lDevice.device, prim.second.bufferMem);
+		//	vkUnmapMemory(vkh::GContext.lDevice.device, prim.second.bufferMem);
 
 			vkFreeDescriptorSets(vkh::GContext.lDevice.device, vkh::GContext.descriptorPool, 1, &prim.second.descSet);
 			vkFreeMemory(vkh::GContext.lDevice.device, prim.second.bufferMem, nullptr);
@@ -71,12 +71,12 @@ namespace Primitive
 			puo.model = Renderer::appRenderData.VIEW_PROJECTION * (glm::translate(prim.second.pos) * glm::scale(prim.second.scale));
 			puo.color = prim.second.col;
 
-		//	static void* udata = nullptr;
-		//	vkMapMemory(GContext.lDevice.device, prim.second.bufferMem, 0, sizeof(PrimitiveUniformObject), 0, &udata);
-		//	memcpy(udata, &puo, sizeof(PrimitiveUniformObject));
-		//	vkUnmapMemory(GContext.lDevice.device, prim.second.bufferMem);
+			static void* udata = nullptr;
+			vkMapMemory(GContext.lDevice.device, prim.second.bufferMem, 0, sizeof(PrimitiveUniformObject), 0, &udata);
+			memcpy(udata, &puo, sizeof(PrimitiveUniformObject));
+			vkUnmapMemory(GContext.lDevice.device, prim.second.bufferMem);
 
-			memcpy(prim.second.mapped, &puo, sizeof(PrimitiveUniformObject));
+			//memcpy(prim.second.mapped, &puo, sizeof(PrimitiveUniformObject));
 
 			idx++;
 			descSets.push_back(&prim.second.descSet);
@@ -98,7 +98,7 @@ namespace Primitive
 		p.scale = glm::vec3(1, 1, 1);
 		p.meshId = meshId;
 		Renderer::createDescriptorSet(p.descSet, p.uniformBuffer, p.bufferMem, Renderer::appRenderData);
-		vkMapMemory(vkh::GContext.lDevice.device, p.bufferMem, 0, sizeof(PrimitiveUniformObject), 0, &p.mapped);
+		//vkMapMemory(vkh::GContext.lDevice.device, p.bufferMem, 0, sizeof(PrimitiveUniformObject), 0, &p.mapped);
 
 		primitiveState.primitives.emplace(next_prim_id, p);
 
