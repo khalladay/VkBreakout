@@ -10,7 +10,6 @@ namespace Renderer
 	AppRenderData appRenderData;
 
 	void createDescriptorSetLayout(AppRenderData& rs);
-	void createDescriptorSet(AppRenderData& rs);
 	void createPipelines(AppRenderData& rs);
 
 	void initializeRendering(HINSTANCE Instance, HWND wndHdl, const char* applicationName)
@@ -20,7 +19,6 @@ namespace Renderer
 		CreateFramebuffers(appRenderData.swapChainFramebuffers, GContext.swapChain, appRenderData.renderPass, GContext.lDevice.device);
 	
 		createDescriptorSetLayout(appRenderData);
-		createDescriptorSet(appRenderData);
 		createPipelines(appRenderData);
 		handleScreenResize(appRenderData);
 
@@ -31,7 +29,7 @@ namespace Renderer
 		//we only need a single binding, since we're passing both our params in a single UBO 
 		VkDescriptorSetLayoutBinding mvpLayoutBinding = {};
 		mvpLayoutBinding.binding = 0;
-		mvpLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+		mvpLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		mvpLayoutBinding.descriptorCount = 1;
 		mvpLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 		mvpLayoutBinding.pImmutableSamplers = nullptr; // Optional
@@ -51,7 +49,7 @@ namespace Renderer
 		assert(res == VK_SUCCESS);
 	}
 
-	void Renderer::createDescriptorSet(AppRenderData& rs)
+	void Renderer::createDescriptorSet(VkDescriptorSet& outDescSet, VkBuffer& outBuffer, VkDeviceMemory& outMemory, AppRenderData& rs)
 	{
 		VkResult res;
 	
@@ -62,21 +60,21 @@ namespace Renderer
 		allocInfo.descriptorSetCount = 1;
 		allocInfo.pSetLayouts = layouts;
 	
-		res = vkAllocateDescriptorSets(GContext.lDevice.device, &allocInfo, &rs.descriptorSet);
-	
+		res = vkAllocateDescriptorSets(GContext.lDevice.device, &allocInfo, &outDescSet);
+		assert(res == VK_SUCCESS);
 		//now we need to configure the descriptor inside the set.
 	
 		//our descriptor points to a uniform buffer, so it's configured with
 		//a VkDescriptorBufferInfo
 	
-		size_t uboAlignment = GContext.gpu.deviceProps.limits.minUniformBufferOffsetAlignment;
-		size_t dynamicAlignment = (sizeof(Primitive::PrimitiveUniformObject) / uboAlignment) * uboAlignment + ((sizeof(Primitive::PrimitiveUniformObject) % uboAlignment) > 0 ? uboAlignment : 0);
+		//size_t uboAlignment = GContext.gpu.deviceProps.limits.minUniformBufferOffsetAlignment;
+		//size_t dynamicAlignment = (sizeof(Primitive::PrimitiveUniformObject) / uboAlignment) * uboAlignment + ((sizeof(Primitive::PrimitiveUniformObject) % uboAlignment) > 0 ? uboAlignment : 0);
 	
 		
-		VkDeviceSize bufferSize = dynamicAlignment * 256;
+		VkDeviceSize bufferSize = sizeof(Primitive::PrimitiveUniformObject);
 	
-		CreateBuffer(rs.uniformBuffer,
-			rs.uniformBufferMemory,
+		CreateBuffer(outBuffer,
+			outMemory,
 			bufferSize,
 			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
@@ -85,17 +83,17 @@ namespace Renderer
 	
 	
 		VkDescriptorBufferInfo bufferInfo = {};
-		bufferInfo.buffer = rs.uniformBuffer;
+		bufferInfo.buffer = outBuffer;
 		bufferInfo.offset = 0;
-		bufferInfo.range = dynamicAlignment;
+		bufferInfo.range = bufferSize;
 	
 		//The configuration of descriptors is updated using the vkUpdateDescriptorSets function, which takes an array of VkWriteDescriptorSet structs as parameter.
 		VkWriteDescriptorSet descriptorWrite = {};
 		descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		descriptorWrite.dstSet = rs.descriptorSet;
+		descriptorWrite.dstSet = outDescSet;
 		descriptorWrite.dstBinding = 0; //refers to binding in shader
 		descriptorWrite.dstArrayElement = 0;
-		descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+		descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		descriptorWrite.descriptorCount = 1;
 		descriptorWrite.pBufferInfo = &bufferInfo;
 		descriptorWrite.pImageInfo = nullptr; // Optional
@@ -224,19 +222,11 @@ namespace Renderer
 	
 	}
 
-	void draw(const struct PrimitiveUniformObject* uniformData, const std::vector<int> primMeshes)
+	void draw(const std::vector<const VkDescriptorSet*>& descSets, const std::vector<int> primMeshes)
 	{
 		//max size of buffer we allocated
 		assert(primMeshes.size() < 256);
-	
-		size_t uboAlignment = GContext.gpu.deviceProps.limits.minUniformBufferOffsetAlignment;
-		size_t dynamicAlignment = (sizeof(Primitive::PrimitiveUniformObject) / uboAlignment) * uboAlignment + ((sizeof(Primitive::PrimitiveUniformObject) % uboAlignment) > 0 ? uboAlignment : 0);
-	
-		static void* udata = nullptr;
-		vkMapMemory(GContext.lDevice.device, appRenderData.uniformBufferMemory, 0, dynamicAlignment * primMeshes.size(), 0, &udata);
-		memcpy(udata, uniformData,  dynamicAlignment * primMeshes.size());
-		vkUnmapMemory(GContext.lDevice.device, appRenderData.uniformBufferMemory);
-	
+		
 		VkResult res;
 	
 		//acquire an image from the swap chain
@@ -292,10 +282,9 @@ namespace Renderer
 		for (int i = 0; i < primMeshes.size(); ++i)
 		{
 			Mesh* mesh = GetMeshData(primMeshes[i]);
-			uint32_t dynamicOffset = i * static_cast<uint32_t>(dynamicAlignment);
 			VkBuffer vertexBuffers[] = { mesh->vBuffer };
 			VkDeviceSize offsets[] = { 0 };
-			vkCmdBindDescriptorSets(GContext.commandBuffers[imageIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, appRenderData.blockMaterial.pipelineLayout, 0, 1, &appRenderData.descriptorSet, 1, &dynamicOffset);
+			vkCmdBindDescriptorSets(GContext.commandBuffers[imageIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, appRenderData.blockMaterial.pipelineLayout, 0, 1, descSets[i], 1, 0);
 	
 			vkCmdBindVertexBuffers(GContext.commandBuffers[imageIndex], 0, 1, vertexBuffers, offsets);
 			vkCmdBindIndexBuffer(GContext.commandBuffers[imageIndex], mesh->indexBuffer, 0, VK_INDEX_TYPE_UINT16);

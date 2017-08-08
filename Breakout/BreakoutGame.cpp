@@ -121,7 +121,7 @@ namespace Breakout
 		float screenHOrtho = 100.0f;
 
 		//ball movement and intersection
-		glm::vec3 frameVel = state.ballVel * deltaTime * 10.0f;
+		glm::vec3 frameVel = state.ballVel * deltaTime * 1.0f;
 
 		state.ballPos += frameVel;
 
@@ -191,11 +191,11 @@ namespace Breakout
 		//move paddle
 		if (getKey(KeyCode::KEY_LEFT))
 		{
-			state.paddlePos -= glm::vec3(0.5f * deltaTime * 30.0f, 0, 0);
+			state.paddlePos -= glm::vec3(0.5f * deltaTime * 3.0f, 0, 0);
 		}
 		else if (getKey(KeyCode::KEY_RIGHT))
 		{
-			state.paddlePos += glm::vec3(0.5f * deltaTime * 30.0f, 0, 0);
+			state.paddlePos += glm::vec3(0.5f * deltaTime * 3.0f, 0, 0);
 		}
 
 		state.paddlePos.x = clamp(state.paddlePos.x, -screenWOrtho + state.paddleScale.x, screenWOrtho - state.paddleScale.x);

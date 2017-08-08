@@ -12,6 +12,10 @@ namespace Primitive
 		glm::vec3 pos;
 		glm::vec3 scale;
 		glm::vec4 col;
+		VkBuffer uniformBuffer;
+		VkDeviceMemory bufferMem;
+		VkDescriptorSet descSet;
+		void* mapped;
 		int meshId;
 	};
 
@@ -27,34 +31,35 @@ namespace Primitive
 
 	void destroyPrimitive(int handle)
 	{
+		vkFreeDescriptorSets(vkh::GContext.lDevice.device, vkh::GContext.descriptorPool , 1, &primitiveState.primitives[handle].descSet);
+		vkFreeMemory(vkh::GContext.lDevice.device, primitiveState.primitives[handle].bufferMem, nullptr);
+		vkDestroyBuffer(vkh::GContext.lDevice.device, primitiveState.primitives[handle].uniformBuffer, nullptr);
+		vkUnmapMemory(vkh::GContext.lDevice.device, primitiveState.primitives[handle].bufferMem);
+
 		primitiveState.primitives.erase(handle);
+		
 	}
 
 	void destroyAllPrimitives()
 	{
+		for (const auto& prim : primitiveState.primitives)
+		{
+			vkUnmapMemory(vkh::GContext.lDevice.device, prim.second.bufferMem);
+
+			vkFreeDescriptorSets(vkh::GContext.lDevice.device, vkh::GContext.descriptorPool, 1, &prim.second.descSet);
+			vkFreeMemory(vkh::GContext.lDevice.device, prim.second.bufferMem, nullptr);
+			vkDestroyBuffer(vkh::GContext.lDevice.device, prim.second.uniformBuffer, nullptr);
+
+		}
 		primitiveState.primitives.clear();
 	}
 
 	void submitPrimitives()
 	{
-		size_t uboAlignment = vkh::GContext.gpu.deviceProps.limits.minUniformBufferOffsetAlignment;
-		size_t dynamicAlignment = (sizeof(PrimitiveUniformObject) / uboAlignment) * uboAlignment + ((sizeof(PrimitiveUniformObject) % uboAlignment) > 0 ? uboAlignment : 0);
+		using namespace vkh;
+		using namespace Renderer;
 
-		size_t bufferSize = primitiveState.primitives.size() * dynamicAlignment;
-
-		static int lastBufferSize = -1;
-
-		if (!primitiveState.uniformData)
-		{
-			primitiveState.uniformData = (PrimitiveUniformObject*)_aligned_malloc(bufferSize, dynamicAlignment);
-			lastBufferSize = (int)bufferSize;
-		}
-		else if (bufferSize > lastBufferSize)
-		{
-			primitiveState.uniformData = (PrimitiveUniformObject*)_aligned_realloc(primitiveState.uniformData, bufferSize, dynamicAlignment);
-			lastBufferSize = (int)bufferSize;
-		}
-
+		std::vector<const VkDescriptorSet*> descSets;
 		std::vector<int> meshes;
 
 		int idx = 0;
@@ -66,13 +71,19 @@ namespace Primitive
 			puo.model = Renderer::appRenderData.VIEW_PROJECTION * (glm::translate(prim.second.pos) * glm::scale(prim.second.scale));
 			puo.color = prim.second.col;
 
-			memcpy(&uniformChar[idx * dynamicAlignment], &puo, sizeof(PrimitiveUniformObject));
-			idx++;
+		//	static void* udata = nullptr;
+		//	vkMapMemory(GContext.lDevice.device, prim.second.bufferMem, 0, sizeof(PrimitiveUniformObject), 0, &udata);
+		//	memcpy(udata, &puo, sizeof(PrimitiveUniformObject));
+		//	vkUnmapMemory(GContext.lDevice.device, prim.second.bufferMem);
 
+			memcpy(prim.second.mapped, &puo, sizeof(PrimitiveUniformObject));
+
+			idx++;
+			descSets.push_back(&prim.second.descSet);
 			meshes.push_back(prim.second.meshId);
 		}
 	
-		Renderer::draw(primitiveState.uniformData, meshes);
+		Renderer::draw(descSets, meshes);
 
 	}
 
@@ -86,6 +97,8 @@ namespace Primitive
 		p.pos = glm::vec3(0, 0, 0);
 		p.scale = glm::vec3(1, 1, 1);
 		p.meshId = meshId;
+		Renderer::createDescriptorSet(p.descSet, p.uniformBuffer, p.bufferMem, Renderer::appRenderData);
+		vkMapMemory(vkh::GContext.lDevice.device, p.bufferMem, 0, sizeof(PrimitiveUniformObject), 0, &p.mapped);
 
 		primitiveState.primitives.emplace(next_prim_id, p);
 
