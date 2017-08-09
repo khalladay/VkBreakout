@@ -73,7 +73,7 @@ namespace Renderer
 		size_t dynamicAlignment = (sizeof(Primitive::PrimitiveUniformObject) / uboAlignment) * uboAlignment + ((sizeof(Primitive::PrimitiveUniformObject) % uboAlignment) > 0 ? uboAlignment : 0);
 	
 		
-		VkDeviceSize bufferSize = dynamicAlignment * 256;
+		VkDeviceSize bufferSize = dynamicAlignment * 512;
 	
 		CreateBuffer(rs.uniformBuffer,
 			rs.uniformBufferMemory,
@@ -224,15 +224,17 @@ namespace Renderer
 	
 	}
 
+
 	void draw(const struct PrimitiveUniformObject* uniformData, const std::vector<int> primMeshes)
 	{
 		//max size of buffer we allocated
-		assert(primMeshes.size() < 256);
+		assert(primMeshes.size() < 512);
 	
 		size_t uboAlignment = GContext.gpu.deviceProps.limits.minUniformBufferOffsetAlignment;
 		size_t dynamicAlignment = (sizeof(Primitive::PrimitiveUniformObject) / uboAlignment) * uboAlignment + ((sizeof(Primitive::PrimitiveUniformObject) % uboAlignment) > 0 ? uboAlignment : 0);
 	
-		static void* udata = nullptr;
+		void* udata = nullptr;
+
 		vkMapMemory(GContext.lDevice.device, appRenderData.uniformBufferMemory, 0, dynamicAlignment * primMeshes.size(), 0, &udata);
 		memcpy(udata, uniformData,  dynamicAlignment * primMeshes.size());
 		vkUnmapMemory(GContext.lDevice.device, appRenderData.uniformBufferMemory);

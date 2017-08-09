@@ -54,7 +54,7 @@ void mainLoop()
 			Breakout::newGame();
 		}
 
-		Breakout::tick(deltaTime);
+		Breakout::tick(0.01f);
 		Breakout::draw();
 	}
 }
