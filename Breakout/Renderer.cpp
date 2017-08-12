@@ -225,7 +225,7 @@ namespace Renderer
 	void draw(const std::vector<const VkDescriptorSet*>& descSets, const std::vector<int> primMeshes)
 	{
 		//max size of buffer we allocated
-		assert(primMeshes.size() < 1024);
+		//assert(primMeshes.size() < 1024);
 		
 		VkResult res;
 	
