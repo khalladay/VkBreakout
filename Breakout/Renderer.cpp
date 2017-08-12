@@ -73,7 +73,7 @@ namespace Renderer
 		size_t dynamicAlignment = (sizeof(Primitive::PrimitiveUniformObject) / uboAlignment) * uboAlignment + ((sizeof(Primitive::PrimitiveUniformObject) % uboAlignment) > 0 ? uboAlignment : 0);
 	
 		
-		VkDeviceSize bufferSize = dynamicAlignment * 512;
+		VkDeviceSize bufferSize = dynamicAlignment * 6000;
 	
 		CreateBuffer(rs.uniformBuffer,
 			rs.uniformBufferMemory,
@@ -226,10 +226,7 @@ namespace Renderer
 
 
 	void draw(const struct PrimitiveUniformObject* uniformData, const std::vector<int> primMeshes)
-	{
-		//max size of buffer we allocated
-		assert(primMeshes.size() < 512);
-	
+	{	
 		size_t uboAlignment = GContext.gpu.deviceProps.limits.minUniformBufferOffsetAlignment;
 		size_t dynamicAlignment = (sizeof(Primitive::PrimitiveUniformObject) / uboAlignment) * uboAlignment + ((sizeof(Primitive::PrimitiveUniformObject) % uboAlignment) > 0 ? uboAlignment : 0);
 	
