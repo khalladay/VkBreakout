@@ -309,7 +309,7 @@ namespace OS
 		if (s_use_qpc) {
 			LARGE_INTEGER now;
 			QueryPerformanceCounter(&now);
-			return (1000LL * now.QuadPart) / s_frequency.QuadPart;
+			return (1000LL * now.QuadPart) / (double)s_frequency.QuadPart;
 		}
 		else {
 			return GetTickCount();
