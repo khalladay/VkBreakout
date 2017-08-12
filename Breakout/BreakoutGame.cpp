@@ -44,18 +44,22 @@ namespace Breakout
 			}
 
 			destroyAllPrimitives();
-			state.gameOver = false; 
+			state.gameOver = false;
 		}
 
 		//setup game config
 		{
+#if STRESS_TEST
 			state.numBricks = 5060;
+#else
+			state.numBricks = 500;
+#endif
 
 			state.paddlePos = glm::vec3(0, 100 * 0.8f, 0);
 			state.paddleScale = glm::vec3(10, 1, 10);
 
 			state.ballPos = glm::vec3(0, 100 * 0.65, 0);
-			state.ballVel = glm::normalize(glm::vec3(0.5, -1, 0));
+			state.ballVel = glm::normalize(glm::vec3(0.5, -1, 0)) * 0.1f;
 			state.ballRad = 1.5f;
 		}
 
@@ -77,6 +81,7 @@ namespace Breakout
 			state.brickPrimHdls = new int[state.numBricks];
 			memset(state.brickPrimHdls, -1, sizeof(int) * state.numBricks);
 
+#if STRESS_TEST
 			for (int i = 0; i < state.numBricks; ++i)
 			{
 				int b = newPrimitive(GetRectMesh());
@@ -87,6 +92,19 @@ namespace Breakout
 				setPrimScale(b, glm::vec3(1.25, 0.75f, 1.0f));
 				state.brickPrimHdls[i] = b;
 			}
+#else
+			for (int i = 0; i < state.numBricks; ++i)
+			{
+				int b = newPrimitive(GetRectMesh());
+				glm::vec3 p = glm::vec3(-150 + (i % 20) * 15, -85 + (i / 20) * 5, 0);
+
+				setPrimPos(b, p);
+				setPrimCol(b, glm::vec4((i / 10) / 5.0f, (i % 10) / 10.0f, 1.0f, 1.0f));
+				setPrimScale(b, glm::vec3(5, 1.5, 10));
+				state.brickPrimHdls[i] = b;
+			}
+
+#endif 
 		}
 	}
 
@@ -178,8 +196,8 @@ namespace Breakout
 
 			if (xIntersect * xIntersect > (0.3 * 0.3))
 			{
-				state.ballVel.x = xIntersect;
-				state.ballVel = glm::normalize(state.ballVel);
+				state.ballVel.x = xIntersect * 0.15f;
+				state.ballVel = glm::normalize(state.ballVel) * 0.1f;
 			}
 
 			state.ballVel.y *= -1;
@@ -191,11 +209,11 @@ namespace Breakout
 		//move paddle
 		if (getKey(KeyCode::KEY_LEFT))
 		{
-			state.paddlePos -= glm::vec3(0.5f * deltaTime * 3.0f, 0, 0);
+			state.paddlePos -= glm::vec3(0.15f * deltaTime, 0, 0);
 		}
 		else if (getKey(KeyCode::KEY_RIGHT))
 		{
-			state.paddlePos += glm::vec3(0.5f * deltaTime * 3.0f, 0, 0);
+			state.paddlePos += glm::vec3(0.15f * deltaTime, 0, 0);
 		}
 
 		state.paddlePos.x = clamp(state.paddlePos.x, -screenWOrtho + state.paddleScale.x, screenWOrtho - state.paddleScale.x);

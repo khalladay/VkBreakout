@@ -24,7 +24,7 @@ void mainLoop()
 	bool running = true;
 
 	double lastFrame = OS::getMilliseconds();
-	
+
 	double fpsAccum = 0.0;
 	int count = 0;
 
@@ -54,7 +54,12 @@ void mainLoop()
 			Breakout::newGame();
 		}
 
+#if STRESS_TEST
 		Breakout::tick(0.0f);
+#else
+		Breakout::tick(deltaTime);
+#endif 
+
 		Breakout::draw();
 	}
 }
