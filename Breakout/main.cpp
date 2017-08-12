@@ -54,7 +54,12 @@ void mainLoop()
 			Breakout::newGame();
 		}
 
+#if STRESS_TEST
 		Breakout::tick(0.0f);
+#else
+		Breakout::tick(deltaTime);
+#endif 
+
 		Breakout::draw();
 	}
 }
