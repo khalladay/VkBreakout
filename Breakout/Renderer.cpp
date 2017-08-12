@@ -178,7 +178,7 @@ namespace Renderer
 	void draw(const struct PrimitiveUniformObject* uniformData, const std::vector<int> primMeshes)
 	{
 		//max size of buffer we allocated
-		assert(primMeshes.size() < 1024);
+		//assert(primMeshes.size() < 1024);
 	
 		VkhContext& Gctxt = GContext;
 		VkResult res;
