@@ -35,9 +35,9 @@ void mainLoop()
 		lastFrame = thisFrameTime;
 		fpsAccum += deltaTime;
 
-		if (count++ == 999)
+		if (count++ == 4999)
 		{
-			printf("Frametime (avg of past 1000 frames): %f ms\n", fpsAccum / 1000.0f);
+			printf("Frametime (avg of past 5000 frames): %f ms\n", fpsAccum / 5000.0);
 			count = 0;
 			fpsAccum = 0;
 		}
@@ -54,7 +54,7 @@ void mainLoop()
 			Breakout::newGame();
 		}
 
-		Breakout::tick(0.01f);
+		Breakout::tick(0.0f);
 		Breakout::draw();
 	}
 }

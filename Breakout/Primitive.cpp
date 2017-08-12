@@ -71,7 +71,7 @@ namespace Primitive
 			puo.model = Renderer::appRenderData.VIEW_PROJECTION * (glm::translate(prim.second.pos) * glm::scale(prim.second.scale));
 			puo.color = prim.second.col;
 
-			static void* udata = nullptr;
+			void* udata = nullptr;
 			vkMapMemory(GContext.lDevice.device, prim.second.bufferMem, 0, sizeof(PrimitiveUniformObject), 0, &udata);
 			memcpy(udata, &puo, sizeof(PrimitiveUniformObject));
 			vkUnmapMemory(GContext.lDevice.device, prim.second.bufferMem);

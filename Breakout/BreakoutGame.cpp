@@ -49,12 +49,12 @@ namespace Breakout
 
 		//setup game config
 		{
-			state.numBricks = 500;
+			state.numBricks = 5060;
 
 			state.paddlePos = glm::vec3(0, 100 * 0.8f, 0);
 			state.paddleScale = glm::vec3(10, 1, 10);
 
-			state.ballPos = glm::vec3(0, 100 * 0.5, 0);
+			state.ballPos = glm::vec3(0, 100 * 0.65, 0);
 			state.ballVel = glm::normalize(glm::vec3(0.5, -1, 0));
 			state.ballRad = 1.5f;
 		}
@@ -80,11 +80,11 @@ namespace Breakout
 			for (int i = 0; i < state.numBricks; ++i)
 			{
 				int b = newPrimitive(GetRectMesh());
-				glm::vec3 p = glm::vec3(-150 + (i % 20) * 15, -75 + (i / 20) * 5, 0);
+				glm::vec3 p = glm::vec3(-160 + (i % 110) * 3.0f, -95 + (i / 110) * 3.0, 0);
 
 				setPrimPos(b, p);
-				setPrimCol(b, glm::vec4((i / 10) / 5.0f, (i % 10) / 10.0f, 1.0f, 1.0f));
-				setPrimScale(b, glm::vec3(5, 1.5, 10));
+				setPrimCol(b, glm::vec4((i / 10) * 5.0f, (i % 10) / 10.0f, 1.0f, 1.0f));
+				setPrimScale(b, glm::vec3(1.25, 0.75f, 1.0f));
 				state.brickPrimHdls[i] = b;
 			}
 		}
