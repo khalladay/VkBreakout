@@ -15,5 +15,5 @@ In addition, another test was done in master to test the speed of a single buffe
 
 The results of the test are as follows: 
 
-![Graph](http://i.imgur.com/fR6drO4.png)
+![Graph](http://i.imgur.com/1TRVFSp.png)
 
