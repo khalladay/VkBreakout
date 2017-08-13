@@ -71,14 +71,14 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>..\build\</OutDir>
     <IntDir>..\build\$(Platform)\$(Configuration)\</IntDir>
-    <IncludePath>W:\Vulkan\VkBreakout\deps;C:\VulkanSDK\1.0.54.0\Include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\VulkanSDK\1.0.54.0\Lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>..\deps;$(IncludePath)</IncludePath>
+    <LibraryPath>..\deps\vulkan;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>..\build\</OutDir>
     <IntDir>..\build\$(Platform)\$(Configuration)\</IntDir>
-    <IncludePath>W:\Vulkan\VkBreakout\deps;C:\VulkanSDK\1.0.54.0\Include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\VulkanSDK\1.0.54.0\Lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>..\deps;$(IncludePath)</IncludePath>
+    <LibraryPath>..\deps\vulkan;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -97,7 +97,8 @@
       <AdditionalDependencies>vulkan-1.lib;dxguid.lib;Winmm.lib;dinput8.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
-      <Command>compile_all_shaders</Command>
+      <Command>
+      </Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
