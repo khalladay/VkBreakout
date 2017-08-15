@@ -8,6 +8,7 @@ using namespace vkh;
 namespace Renderer
 {
 	AppRenderData appRenderData;
+	void* udata = nullptr;
 
 	void createDescriptorSetLayout(AppRenderData& rs);
 	void createDescriptorSet(AppRenderData& rs);
@@ -224,16 +225,29 @@ namespace Renderer
 	
 	}
 
+	void* mapBufferPtr(int maxPrimMeshes)
+	{
+		size_t uboAlignment = GContext.gpu.deviceProps.limits.minUniformBufferOffsetAlignment;
+		size_t dynamicAlignment = (sizeof(Primitive::PrimitiveUniformObject) / uboAlignment) * uboAlignment + ((sizeof(Primitive::PrimitiveUniformObject) % uboAlignment) > 0 ? uboAlignment : 0);
+
+		if (!udata)
+		{
+			vkMapMemory(GContext.lDevice.device, appRenderData.uniformBufferMemory, 0, dynamicAlignment * maxPrimMeshes, 0, &udata);
+		}
+
+		return udata;
+	}
+
+	void unmapBufferPtr()
+	{
+		vkUnmapMemory(GContext.lDevice.device, appRenderData.uniformBufferMemory);
+	}
 
 	void draw(const struct PrimitiveUniformObject* uniformData, const std::vector<int> primMeshes)
 	{	
 		size_t uboAlignment = GContext.gpu.deviceProps.limits.minUniformBufferOffsetAlignment;
 		size_t dynamicAlignment = (sizeof(Primitive::PrimitiveUniformObject) / uboAlignment) * uboAlignment + ((sizeof(Primitive::PrimitiveUniformObject) % uboAlignment) > 0 ? uboAlignment : 0);
 	
-		void* udata = nullptr;
-		vkMapMemory(GContext.lDevice.device, appRenderData.uniformBufferMemory, 0, dynamicAlignment * primMeshes.size(), 0, &udata);
-		memcpy(udata, uniformData,  dynamicAlignment * primMeshes.size());
-		vkUnmapMemory(GContext.lDevice.device, appRenderData.uniformBufferMemory);
 	
 		VkResult res;
 	

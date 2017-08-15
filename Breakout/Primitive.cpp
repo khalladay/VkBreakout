@@ -40,25 +40,10 @@ namespace Primitive
 		size_t uboAlignment = vkh::GContext.gpu.deviceProps.limits.minUniformBufferOffsetAlignment;
 		size_t dynamicAlignment = (sizeof(PrimitiveUniformObject) / uboAlignment) * uboAlignment + ((sizeof(PrimitiveUniformObject) % uboAlignment) > 0 ? uboAlignment : 0);
 
-		size_t bufferSize = primitiveState.primitives.size() * dynamicAlignment;
-
-		static int lastBufferSize = -1;
-
-		if (!primitiveState.uniformData)
-		{
-			primitiveState.uniformData = (PrimitiveUniformObject*)_aligned_malloc(bufferSize, dynamicAlignment);
-			lastBufferSize = (int)bufferSize;
-		}
-		else if (bufferSize > lastBufferSize)
-		{
-			primitiveState.uniformData = (PrimitiveUniformObject*)_aligned_realloc(primitiveState.uniformData, bufferSize, dynamicAlignment);
-			lastBufferSize = (int)bufferSize;
-		}
-
 		std::vector<int> meshes;
 
 		int idx = 0;
-		char* uniformChar = (char*)primitiveState.uniformData;
+		char* uniformChar = (char*)Renderer::mapBufferPtr(MAX_PRIMS);
 
 		for (const auto& prim : primitiveState.primitives)
 		{
@@ -72,6 +57,9 @@ namespace Primitive
 			meshes.push_back(prim.second.meshId);
 		}
 	
+		//comment this out to test keeping the buffer always mapped.
+		Renderer::unmapBufferPtr();
+
 		Renderer::draw(primitiveState.uniformData, meshes);
 
 	}

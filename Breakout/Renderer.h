@@ -32,5 +32,6 @@ namespace Renderer
 	void initializeRendering(HINSTANCE Instance, HWND wndHdl, const char* applicationName);
 	void handleScreenResize(AppRenderData& rd);
 	void draw(const Primitive::PrimitiveUniformObject* uniformData, const std::vector<int> primMeshes);
-
+	void* mapBufferPtr(int maxPrims);
+	void unmapBufferPtr();
 }
