@@ -91,12 +91,20 @@ namespace Renderer
 	
 		
 		VkDeviceSize bufferSize = dynamicAlignment * 6000;
-	
+		CreateBuffer(rs.stagingBuffer,
+			rs.stagingBufferMemory,
+			bufferSize,
+			VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			GContext.lDevice.device,
+			GContext.gpu.device);
+
+
 		CreateBuffer(rs.uniformBuffer,
 			rs.uniformBufferMemory,
 			bufferSize,
-			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 			GContext.lDevice.device,
 			GContext.gpu.device);
 	
@@ -248,7 +256,7 @@ namespace Renderer
 
 		if (!udata)
 		{
-			vkMapMemory(GContext.lDevice.device, appRenderData.uniformBufferMemory, 0, dynamicAlignment * maxPrimMeshes, 0, &udata);
+			vkMapMemory(GContext.lDevice.device, appRenderData.stagingBufferMemory, 0, dynamicAlignment * maxPrimMeshes, 0, &udata);
 		}
 
 		return udata;
@@ -256,7 +264,7 @@ namespace Renderer
 
 	void unmapBufferPtr()
 	{
-		vkUnmapMemory(GContext.lDevice.device, appRenderData.uniformBufferMemory);
+		vkUnmapMemory(GContext.lDevice.device, appRenderData.stagingBufferMemory);
 	}
 
 	void draw(const struct PrimitiveUniformObject* uniformData, const std::vector<int> primMeshes)
@@ -301,7 +309,16 @@ namespace Renderer
 		beginInfo.pInheritanceInfo = nullptr; // Optional
 		vkResetCommandBuffer(GContext.commandBuffers[imageIndex], VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
 		res = vkBeginCommandBuffer(GContext.commandBuffers[imageIndex], &beginInfo);
+
 		assert(res == VK_SUCCESS);
+
+		VkBufferCopy copyRegion = {};
+		copyRegion.srcOffset = 0; // Optional
+		copyRegion.dstOffset = 0; // Optional
+		copyRegion.size = dynamicAlignment * primMeshes.size();
+		vkCmdCopyBuffer(GContext.commandBuffers[imageIndex], appRenderData.stagingBuffer, appRenderData.uniformBuffer, 1, &copyRegion);
+
+
 
 		vkCmdResetQueryPool(GContext.commandBuffers[imageIndex], appRenderData.queryPool, 0, 2);
 

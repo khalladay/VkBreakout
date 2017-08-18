@@ -18,6 +18,9 @@ namespace Renderer
 
 		//Because this application is simple enough, we use a 
 		//single uniform buffer for the whole application
+		VkBuffer stagingBuffer;
+		VkDeviceMemory stagingBufferMemory;
+
 		VkBuffer uniformBuffer;
 		VkDeviceMemory uniformBufferMemory;
 
