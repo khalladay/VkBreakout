@@ -12,6 +12,7 @@ namespace Renderer
 	void createDescriptorSetLayout(AppRenderData& rs);
 	void createDescriptorSet(AppRenderData& rs);
 	void createPipelines(AppRenderData& rs);
+	void creaetQueryPool(AppRenderData& rs);
 
 	void initializeRendering(HINSTANCE Instance, HWND wndHdl, const char* applicationName)
 	{
@@ -22,7 +23,21 @@ namespace Renderer
 		createDescriptorSetLayout(appRenderData);
 		createDescriptorSet(appRenderData);
 		createPipelines(appRenderData);
+		creaetQueryPool(appRenderData);
 		handleScreenResize(appRenderData);
+
+	}
+
+	void creaetQueryPool(AppRenderData& rs)
+	{
+		VkQueryPoolCreateInfo createInfo = {};
+		createInfo.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+		createInfo.pNext = nullptr;
+		createInfo.queryType = VK_QUERY_TYPE_TIMESTAMP;
+		createInfo.queryCount = 2;
+
+		VkResult res = vkCreateQueryPool(GContext.lDevice.device, &createInfo, nullptr, &rs.queryPool);
+		assert(res == VK_SUCCESS);
 
 	}
 
@@ -273,6 +288,8 @@ namespace Renderer
 		res = vkBeginCommandBuffer(GContext.commandBuffers[imageIndex], &beginInfo);
 		assert(res == VK_SUCCESS);
 	
+		vkCmdResetQueryPool(GContext.commandBuffers[imageIndex], appRenderData.queryPool, 0, 2);
+
 		VkRenderPassBeginInfo renderPassInfo = {};
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 		renderPassInfo.renderPass = appRenderData.renderPass;
@@ -285,8 +302,9 @@ namespace Renderer
 		renderPassInfo.pClearValues = &clearColor;
 	
 		vkCmdBeginRenderPass(GContext.commandBuffers[imageIndex], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-	
 		vkCmdBindPipeline(GContext.commandBuffers[imageIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, appRenderData.blockMaterial.gfxPipeline);
+
+		vkCmdWriteTimestamp(GContext.commandBuffers[imageIndex], VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, appRenderData.queryPool, 0);
 		for (int i = 0; i < primMeshes.size(); ++i)
 		{
 			Mesh* mesh = GetMeshData(primMeshes[i]);
@@ -299,6 +317,7 @@ namespace Renderer
 			vkCmdBindIndexBuffer(GContext.commandBuffers[imageIndex], mesh->indexBuffer, 0, VK_INDEX_TYPE_UINT16);
 			vkCmdDrawIndexed(GContext.commandBuffers[imageIndex], static_cast<uint32_t>(mesh->indexCount), 1, 0, 0, 0);
 		}
+		vkCmdWriteTimestamp(GContext.commandBuffers[imageIndex], VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, appRenderData.queryPool, 1);
 	
 		vkCmdEndRenderPass(GContext.commandBuffers[imageIndex]);
 	
@@ -345,5 +364,27 @@ namespace Renderer
 		{
 			handleScreenResize(appRenderData);  
 		}
+
+		//log performance data:
+
+		uint32_t end = 0;
+		uint32_t begin = 0;
+
+		static int count = 0;
+		static float totalTime = 0.0f;
+		if (count++ > 4999)
+		{
+			printf("VK Render Time (avg of past 5000 frames): %f ms\n", totalTime / 5000.0f);
+			count = 0;
+			totalTime = 0;
+		}
+		float timestampFrequency = GContext.gpu.deviceProps.limits.timestampPeriod;
+
+
+		vkGetQueryPoolResults(GContext.lDevice.device, appRenderData.queryPool, 1, 1, sizeof(uint32_t), &end, 0, VK_QUERY_RESULT_WAIT_BIT);
+		vkGetQueryPoolResults(GContext.lDevice.device, appRenderData.queryPool, 0, 1, sizeof(uint32_t), &begin, 0, VK_QUERY_RESULT_WAIT_BIT);
+		uint32_t diff = end - begin;
+		totalTime += (diff) / (float)1e6;
+
 	}
 }

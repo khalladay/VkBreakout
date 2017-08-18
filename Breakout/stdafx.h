@@ -9,4 +9,9 @@
 #define SCREEN_W 1280
 #define SCREEN_H 720
 
-#define STRESS_TEST 0
+#define STRESS_TEST 1
+#if STRESS_TEST
+#define MAX_PRIMS 5060
+#else
+#define MAX_PRIMS 500
+#endif
