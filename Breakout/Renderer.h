@@ -21,6 +21,9 @@ namespace Renderer
 		VkBuffer uniformBuffer;
 		VkDeviceMemory uniformBufferMemory;
 
+		//for performacne testing
+		VkQueryPool					queryPool;
+
 		glm::mat4 VIEW_PROJECTION;
 		int screenW;
 		int screenH;
