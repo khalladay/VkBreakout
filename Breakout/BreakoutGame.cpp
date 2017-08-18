@@ -49,11 +49,7 @@ namespace Breakout
 
 		//setup game config
 		{
-#if STRESS_TEST
-			state.numBricks = 5060;
-#else
-			state.numBricks = 500;
-#endif
+			state.numBricks = MAX_PRIMS;
 
 			state.paddlePos = glm::vec3(0, 100 * 0.8f, 0);
 			state.paddleScale = glm::vec3(10, 1, 10);

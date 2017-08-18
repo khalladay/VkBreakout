@@ -15,6 +15,9 @@ namespace Renderer
 		VkRenderPass renderPass; //only 1 render pass for this application
 		std::vector<VkFramebuffer>	swapChainFramebuffers;
 
+		//for performacne testing
+		VkQueryPool					queryPool;
+
 		glm::mat4 VIEW_PROJECTION;
 		int screenW;
 		int screenH;
