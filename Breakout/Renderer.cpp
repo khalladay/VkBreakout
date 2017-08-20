@@ -245,10 +245,13 @@ namespace Renderer
 		size_t uboAlignment = GContext.gpu.deviceProps.limits.minUniformBufferOffsetAlignment;
 		size_t dynamicAlignment = (sizeof(Primitive::PrimitiveUniformObject) / uboAlignment) * uboAlignment + ((sizeof(Primitive::PrimitiveUniformObject) % uboAlignment) > 0 ? uboAlignment : 0);
 	
-		void* udata = nullptr;
-		vkMapMemory(GContext.lDevice.device, appRenderData.uniformBufferMemory, 0, dynamicAlignment * primMeshes.size(), 0, &udata);
-		memcpy(udata, uniformData,  dynamicAlignment * primMeshes.size());
-		vkUnmapMemory(GContext.lDevice.device, appRenderData.uniformBufferMemory);
+		static void* udata = nullptr;
+		if (!udata)
+		{
+			vkMapMemory(GContext.lDevice.device, appRenderData.uniformBufferMemory, 0, dynamicAlignment * primMeshes.size(), 0, &udata);
+		}
+		memcpy(udata, uniformData, dynamicAlignment * primMeshes.size());
+		//vkUnmapMemory(GContext.lDevice.device, appRenderData.uniformBufferMemory);
 	
 		VkResult res;
 	
