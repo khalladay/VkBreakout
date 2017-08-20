@@ -91,6 +91,8 @@ namespace Renderer
 	
 		
 		VkDeviceSize bufferSize = dynamicAlignment * 6000;
+
+#if DEVICE_LOCAL_MEMORY
 		CreateBuffer(rs.stagingBuffer,
 			rs.stagingBufferMemory,
 			bufferSize,
@@ -99,7 +101,6 @@ namespace Renderer
 			GContext.lDevice.device,
 			GContext.gpu.device);
 
-
 		CreateBuffer(rs.uniformBuffer,
 			rs.uniformBufferMemory,
 			bufferSize,
@@ -107,6 +108,16 @@ namespace Renderer
 			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 			GContext.lDevice.device,
 			GContext.gpu.device);
+#else
+		CreateBuffer(rs.uniformBuffer,
+			rs.uniformBufferMemory,
+			bufferSize,
+			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			GContext.lDevice.device,
+			GContext.gpu.device);
+
+#endif
 	
 	
 		VkDescriptorBufferInfo bufferInfo = {};
@@ -256,7 +267,11 @@ namespace Renderer
 
 		if (!udata)
 		{
+#if DEVICE_LOCAL_MEMORY
 			vkMapMemory(GContext.lDevice.device, appRenderData.stagingBufferMemory, 0, dynamicAlignment * maxPrimMeshes, 0, &udata);
+#else
+			vkMapMemory(GContext.lDevice.device, appRenderData.uniformBufferMemory, 0, dynamicAlignment * maxPrimMeshes, 0, &udata);
+#endif
 		}
 
 		return udata;
@@ -264,7 +279,11 @@ namespace Renderer
 
 	void unmapBufferPtr()
 	{
+#if DEVICE_LOCAL_MEMORY
 		vkUnmapMemory(GContext.lDevice.device, appRenderData.stagingBufferMemory);
+#else
+		vkUnmapMemory(GContext.lDevice.device, appRenderData.uniformBufferMemory);
+#endif 
 		udata = nullptr;
 	}
 
@@ -316,8 +335,11 @@ namespace Renderer
 		copyRegion.srcOffset = 0; // Optional
 		copyRegion.dstOffset = 0; // Optional
 		copyRegion.size = dynamicAlignment * primMeshes.size();
+
+#if DEVICE_LOCAL_MEMORY
 		vkCmdCopyBuffer(GContext.commandBuffers[imageIndex], appRenderData.stagingBuffer, appRenderData.uniformBuffer, 1, &copyRegion);
-	
+#endif
+
 #if ENABLE_VK_TIMESTAMP
 		vkCmdResetQueryPool(GContext.commandBuffers[imageIndex], appRenderData.queryPool, 0, 2);
 #endif

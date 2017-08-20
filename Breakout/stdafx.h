@@ -17,3 +17,4 @@
 #endif
 
 #define ENABLE_VK_TIMESTAMP 0
+#define DEVICE_LOCAL_MEMORY 1
