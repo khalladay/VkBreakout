@@ -24,8 +24,10 @@ namespace Renderer
 		createDescriptorSetLayout(appRenderData);
 		createDescriptorSet(appRenderData);
 		createPipelines(appRenderData);
-		createQueryPool(appRenderData);
 
+#if ENABLE_VK_TIMESTAMP
+		createQueryPool(appRenderData);
+#endif
 		handleScreenResize(appRenderData);
 	}
 
@@ -320,7 +322,9 @@ namespace Renderer
 		vkCmdResetQueryPool(GContext.commandBuffers[imageIndex], appRenderData.queryPool, 0, 2);
 
 	
+#if ENABLE_VK_TIMESTAMP
 		vkCmdResetQueryPool(GContext.commandBuffers[imageIndex], appRenderData.queryPool, 0, 2);
+#endif
 
 		VkRenderPassBeginInfo renderPassInfo = {};
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -335,7 +339,9 @@ namespace Renderer
 		vkCmdBeginRenderPass(GContext.commandBuffers[imageIndex], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 		vkCmdBindPipeline(GContext.commandBuffers[imageIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, appRenderData.blockMaterial.gfxPipeline);
 
+#if ENABLE_VK_TIMESTAMP
 		vkCmdWriteTimestamp(GContext.commandBuffers[imageIndex], VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, appRenderData.queryPool, 0);
+#endif
 		for (int i = 0; i < primMeshes.size(); ++i)
 		{
 			Mesh* mesh = GetMeshData(primMeshes[i]);
@@ -348,8 +354,10 @@ namespace Renderer
 			vkCmdBindIndexBuffer(GContext.commandBuffers[imageIndex], mesh->indexBuffer, 0, VK_INDEX_TYPE_UINT16);
 			vkCmdDrawIndexed(GContext.commandBuffers[imageIndex], static_cast<uint32_t>(mesh->indexCount), 1, 0, 0, 0);
 		}
-		vkCmdWriteTimestamp(GContext.commandBuffers[imageIndex], VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, appRenderData.queryPool, 1);
 
+#if ENABLE_VK_TIMESTAMP
+		vkCmdWriteTimestamp(GContext.commandBuffers[imageIndex], VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, appRenderData.queryPool, 1);
+#endif
 		vkCmdEndRenderPass(GContext.commandBuffers[imageIndex]);
 		res = vkEndCommandBuffer(GContext.commandBuffers[imageIndex]);
 		assert(res == VK_SUCCESS);
@@ -395,6 +403,9 @@ namespace Renderer
 			handleScreenResize(appRenderData);  
 		}
 
+#if ENABLE_VK_TIMESTAMP
+		//log performance data:
+
 		uint32_t end = 0;
 		uint32_t begin = 0;
 
@@ -414,6 +425,7 @@ namespace Renderer
 		vkGetQueryPoolResults(GContext.lDevice.device, appRenderData.queryPool, 0, 1, sizeof(uint32_t), &begin, 0, VK_QUERY_RESULT_WAIT_BIT);
 		uint32_t diff = end - begin;
 		totalTime += (diff) / (float)1e6;
+#endif
 
 	}
 }
