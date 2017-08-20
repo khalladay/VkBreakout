@@ -64,7 +64,11 @@ namespace Renderer
 		assert(res == VK_SUCCESS);
 	}
 
-	void Renderer::createDescriptorSet(VkDescriptorSet& outDescSet, VkBuffer& outBuffer, VkDeviceMemory& outMemory, AppRenderData& rs)
+#if DEVICE_LOCAL_MEMORY
+	void createDescriptorSet(VkDescriptorSet& outDescSet, VkBuffer& outBuffer, VkDeviceMemory& outMemory, VkBuffer& outStaging, VkDeviceMemory& outStagingMemory, AppRenderData& rs)
+#else
+	void createDescriptorSet(VkDescriptorSet& outDescSet, VkBuffer& outBuffer, VkDeviceMemory& outMemory, AppRenderData& rs)
+#endif
 	{
 		VkResult res;
 	
@@ -76,18 +80,29 @@ namespace Renderer
 		allocInfo.pSetLayouts = layouts;
 	
 		res = vkAllocateDescriptorSets(GContext.lDevice.device, &allocInfo, &outDescSet);
-		assert(res == VK_SUCCESS);
-		//now we need to configure the descriptor inside the set.
-	
-		//our descriptor points to a uniform buffer, so it's configured with
-		//a VkDescriptorBufferInfo
-	
-		//size_t uboAlignment = GContext.gpu.deviceProps.limits.minUniformBufferOffsetAlignment;
-		//size_t dynamicAlignment = (sizeof(Primitive::PrimitiveUniformObject) / uboAlignment) * uboAlignment + ((sizeof(Primitive::PrimitiveUniformObject) % uboAlignment) > 0 ? uboAlignment : 0);
-	
+		assert(res == VK_SUCCESS);	
 		
 		VkDeviceSize bufferSize = sizeof(Primitive::PrimitiveUniformObject);
-	
+
+#if DEVICE_LOCAL_MEMORY
+
+		CreateBuffer(outStaging,
+			outStagingMemory,
+			bufferSize,
+			VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			GContext.lDevice.device,
+			GContext.gpu.device);
+
+		CreateBuffer(outBuffer,
+			outMemory,
+			bufferSize,
+			VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+			GContext.lDevice.device,
+			GContext.gpu.device);
+
+#else
 		CreateBuffer(outBuffer,
 			outMemory,
 			bufferSize,
@@ -95,6 +110,7 @@ namespace Renderer
 			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 			GContext.lDevice.device,
 			GContext.gpu.device);
+#endif
 	
 	
 		VkDescriptorBufferInfo bufferInfo = {};
@@ -237,7 +253,11 @@ namespace Renderer
 	
 	}
 
+#if DEVICE_LOCAL_MEMORY
+	void draw(const std::vector<const VkDescriptorSet*>& descSets, const std::vector<const VkBuffer*>& buffers, const std::vector<int> primMeshes)
+#else
 	void draw(const std::vector<const VkDescriptorSet*>& descSets, const std::vector<int> primMeshes)
+#endif
 	{
 		//max size of buffer we allocated
 		//assert(primMeshes.size() < 1024);
@@ -299,6 +319,15 @@ namespace Renderer
 		vkCmdWriteTimestamp(GContext.commandBuffers[imageIndex], VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, appRenderData.queryPool, 0);
 		for (int i = 0; i < primMeshes.size(); ++i)
 		{
+#if DEVICE_LOCAL_MEMORY
+			VkBufferCopy copyRegion = {};
+			copyRegion.srcOffset = 0; // Optional
+			copyRegion.dstOffset = 0; // Optional
+			copyRegion.size = sizeof(Primitive::PrimitiveUniformObject);
+
+			vkCmdCopyBuffer(GContext.commandBuffers[imageIndex], *buffers[i * 2], *buffers[i * 2 + 1], 1, &copyRegion);
+#endif
+
 			Mesh* mesh = GetMeshData(primMeshes[i]);
 			VkBuffer vertexBuffers[] = { mesh->vBuffer };
 			VkDeviceSize offsets[] = { 0 };

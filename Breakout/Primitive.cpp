@@ -12,10 +12,15 @@ namespace Primitive
 		glm::vec3 pos;
 		glm::vec3 scale;
 		glm::vec4 col;
+
 		VkBuffer uniformBuffer;
 		VkDeviceMemory bufferMem;
+
+		VkBuffer stagingBuffer;
+		VkDeviceMemory stagingMem;
+
 		VkDescriptorSet descSet;
-	//	void* mapped;
+		void* mapped;
 		int meshId;
 	};
 
@@ -60,6 +65,7 @@ namespace Primitive
 		using namespace Renderer;
 
 		std::vector<const VkDescriptorSet*> descSets;
+		std::vector<const VkBuffer*> buffers;
 		std::vector<int> meshes;
 
 		int idx = 0;
@@ -71,19 +77,17 @@ namespace Primitive
 			puo.model = Renderer::appRenderData.VIEW_PROJECTION * (glm::translate(prim.second.pos) * glm::scale(prim.second.scale));
 			puo.color = prim.second.col;
 
-			void* udata = nullptr;
-			vkMapMemory(GContext.lDevice.device, prim.second.bufferMem, 0, sizeof(PrimitiveUniformObject), 0, &udata);
-			memcpy(udata, &puo, sizeof(PrimitiveUniformObject));
-			vkUnmapMemory(GContext.lDevice.device, prim.second.bufferMem);
-
-			//memcpy(prim.second.mapped, &puo, sizeof(PrimitiveUniformObject));
+			memcpy(prim.second.mapped, &puo, sizeof(PrimitiveUniformObject));
 
 			idx++;
 			descSets.push_back(&prim.second.descSet);
 			meshes.push_back(prim.second.meshId);
+
+			buffers.push_back(&prim.second.stagingBuffer);
+			buffers.push_back(&prim.second.uniformBuffer);
 		}
 	
-		Renderer::draw(descSets, meshes);
+		Renderer::draw(descSets, buffers, meshes);
 
 	}
 
@@ -97,8 +101,14 @@ namespace Primitive
 		p.pos = glm::vec3(0, 0, 0);
 		p.scale = glm::vec3(1, 1, 1);
 		p.meshId = meshId;
+
+#if DEVICE_LOCAL_MEMORY
+		Renderer::createDescriptorSet(p.descSet, p.uniformBuffer, p.bufferMem, p.stagingBuffer, p.stagingMem, Renderer::appRenderData);
+		vkMapMemory(vkh::GContext.lDevice.device, p.stagingMem, 0, sizeof(PrimitiveUniformObject), 0, &p.mapped);
+#else
 		Renderer::createDescriptorSet(p.descSet, p.uniformBuffer, p.bufferMem, Renderer::appRenderData);
-		//vkMapMemory(vkh::GContext.lDevice.device, p.bufferMem, 0, sizeof(PrimitiveUniformObject), 0, &p.mapped);
+		vkMapMemory(vkh::GContext.lDevice.device, p.bufferMem, 0, sizeof(PrimitiveUniformObject), 0, &p.mapped);
+#endif
 
 		primitiveState.primitives.emplace(next_prim_id, p);
 
