@@ -16,4 +16,4 @@
 #define MAX_PRIMS 500
 #endif
 
-#define ENABLE_VK_TIMESTAMP 1
+#define ENABLE_VK_TIMESTAMP 0

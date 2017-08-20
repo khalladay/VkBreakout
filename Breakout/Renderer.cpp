@@ -265,6 +265,7 @@ namespace Renderer
 	void unmapBufferPtr()
 	{
 		vkUnmapMemory(GContext.lDevice.device, appRenderData.stagingBufferMemory);
+		udata = nullptr;
 	}
 
 	void draw(const struct PrimitiveUniformObject* uniformData, const std::vector<int> primMeshes)
@@ -316,11 +317,6 @@ namespace Renderer
 		copyRegion.dstOffset = 0; // Optional
 		copyRegion.size = dynamicAlignment * primMeshes.size();
 		vkCmdCopyBuffer(GContext.commandBuffers[imageIndex], appRenderData.stagingBuffer, appRenderData.uniformBuffer, 1, &copyRegion);
-
-
-
-		vkCmdResetQueryPool(GContext.commandBuffers[imageIndex], appRenderData.queryPool, 0, 2);
-
 	
 #if ENABLE_VK_TIMESTAMP
 		vkCmdResetQueryPool(GContext.commandBuffers[imageIndex], appRenderData.queryPool, 0, 2);
