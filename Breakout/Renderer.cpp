@@ -25,10 +25,8 @@ namespace Renderer
 		createDescriptorSet(appRenderData);
 		createPipelines(appRenderData);
 		createQueryPool(appRenderData);
+
 		handleScreenResize(appRenderData);
-
-
-
 	}
 
 	void createQueryPool(AppRenderData& rs)
@@ -272,7 +270,6 @@ namespace Renderer
 		size_t uboAlignment = GContext.gpu.deviceProps.limits.minUniformBufferOffsetAlignment;
 		size_t dynamicAlignment = (sizeof(Primitive::PrimitiveUniformObject) / uboAlignment) * uboAlignment + ((sizeof(Primitive::PrimitiveUniformObject) % uboAlignment) > 0 ? uboAlignment : 0);
 	
-
 		VkResult res;
 	
 		//acquire an image from the swap chain
@@ -323,6 +320,8 @@ namespace Renderer
 		vkCmdResetQueryPool(GContext.commandBuffers[imageIndex], appRenderData.queryPool, 0, 2);
 
 	
+		vkCmdResetQueryPool(GContext.commandBuffers[imageIndex], appRenderData.queryPool, 0, 2);
+
 		VkRenderPassBeginInfo renderPassInfo = {};
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 		renderPassInfo.renderPass = appRenderData.renderPass;
@@ -401,9 +400,10 @@ namespace Renderer
 
 		static int count = 0;
 		static float totalTime = 0.0f;
-		if (count++ > 499)
+
+		if (count++ > 4999)
 		{
-			printf("VK Render Time (avg of past 5000 frames): %f ms\n", totalTime / 500.0f);
+			printf("VK Render Time (avg of past 5000 frames): %f ms\n", totalTime / 5000.0f);
 			count = 0;
 			totalTime = 0;
 		}
@@ -413,10 +413,6 @@ namespace Renderer
 		vkGetQueryPoolResults(GContext.lDevice.device, appRenderData.queryPool, 1, 1, sizeof(uint32_t), &end, 0, VK_QUERY_RESULT_WAIT_BIT);
 		vkGetQueryPoolResults(GContext.lDevice.device, appRenderData.queryPool, 0, 1, sizeof(uint32_t), &begin, 0, VK_QUERY_RESULT_WAIT_BIT);
 		uint32_t diff = end - begin;
-		if (diff > 100000)
-		{
-		//	printf("wtf");
-		}
 		totalTime += (diff) / (float)1e6;
 
 	}
