@@ -46,12 +46,12 @@ namespace Primitive
 
 		if (!primitiveState.uniformData)
 		{
-			primitiveState.uniformData = (PrimitiveUniformObject*)_aligned_malloc(bufferSize, dynamicAlignment);
+			primitiveState.uniformData = (PrimitiveUniformObject*)malloc(bufferSize);
 			lastBufferSize = (int)bufferSize;
 		}
 		else if (bufferSize > lastBufferSize)
 		{
-			primitiveState.uniformData = (PrimitiveUniformObject*)_aligned_realloc(primitiveState.uniformData, bufferSize, dynamicAlignment);
+			primitiveState.uniformData = (PrimitiveUniformObject*)realloc(primitiveState.uniformData, bufferSize);
 			lastBufferSize = (int)bufferSize;
 		}
 
