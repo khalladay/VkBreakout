@@ -400,9 +400,9 @@ namespace Renderer
 
 		static int count = 0;
 		static float totalTime = 0.0f;
-		if (count++ > 4999)
+		if (count++ > STAT_INTERVAL_FRAMES-1)
 		{
-			printf("VK Render Time (avg of past 5000 frames): %f ms\n", totalTime / 5000.0f);
+			printf("VK Render Time (avg of past 5000 frames): %f ms\n", totalTime / (float)STAT_INTERVAL_FRAMES);
 			count = 0;
 			totalTime = 0;
 		}
