@@ -9,6 +9,12 @@ The project has multiple branches, representing different approaches. The branch
 * 01-Multi-Buffer - uses a unique buffer for each drawn object
 * 01-Multi-Buffer-KeepMapped - uses a unique buffer for each drawn object, but keeps the memory for that buffer mapped
 
+* 02-DynamicUniformBuffer - still using a single VkBuffer, but now that buffer is Device-Local, and some memory optimization have been applied
+* 02-Multi-Buffer - using Device-Local memory for the uniform buffer passed to the gpu
+* 02-Multi-Buffer -KeepMapped - using Device-Local memory for the uniform buffer passed to the gpu
+
+* 03-DynamicUniformBuffer - using multi draw indirect to render all blocks in a single draw call
+
 In addition, another test was done in 01-DynamicUniformBuffer to test the speed of a single buffer approach if you kept the entire buffer mapped all the time. This isn't in it's own branch because it's a trivial change, and I'm lazy. 
 
 The results of the test are as follows: 
