@@ -8,7 +8,7 @@
 #define APP_NAME "Vulkan Breakout"
 #define SCREEN_W 1280
 #define SCREEN_H 720
-
+ 
 #define STRESS_TEST 1
 #if STRESS_TEST
 #define MAX_PRIMS 5060
