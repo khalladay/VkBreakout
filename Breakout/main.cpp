@@ -35,9 +35,9 @@ void mainLoop()
 		lastFrame = thisFrameTime;
 		fpsAccum += deltaTime;
 
-		if (count++ == 49)
+		if (count++ == STAT_INTERVAL_FRAMES-1)
 		{
-			printf("Frametime (avg of past 5000 frames): %f ms\n", fpsAccum / 50.0f);
+			printf("Frametime (avg of past 5000 frames): %f ms\n", fpsAccum / (float)STAT_INTERVAL_FRAMES);
 			count = 0;
 			fpsAccum = 0;
 		}
