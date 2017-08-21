@@ -16,5 +16,5 @@
 #define MAX_PRIMS 500
 #endif
 
-
+#define ENABLE_VK_TIMESTAMP 1
 #define DEVICE_LOCAL_MEMORY 1
