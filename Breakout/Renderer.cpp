@@ -22,7 +22,11 @@ namespace Renderer
 		//needed for creating pipeline layout
 		createDescriptorSetLayout(appRenderData);
 		createPipelines(appRenderData);
+
+		#if ENABLE_VK_TIMESTAMP
 		createQueryPool(appRenderData);
+		#endif
+
 		handleScreenResize(appRenderData);
 
 	}
@@ -191,9 +195,6 @@ namespace Renderer
 
 	void draw(const struct Primitive::PrimitiveUniformObject* uniformData, const std::vector<int> primMeshes)
 	{
-		//max size of buffer we allocated
-		//assert(primMeshes.size() < 1024);
-	
 		VkhContext& Gctxt = GContext;
 		VkResult res;
 	
@@ -233,7 +234,9 @@ namespace Renderer
 		res = vkBeginCommandBuffer(Gctxt.commandBuffers[imageIndex], &beginInfo);
 		assert(res == VK_SUCCESS);
 	
+#if ENABLE_VK_TIMESTAMP
 		vkCmdResetQueryPool(GContext.commandBuffers[imageIndex], appRenderData.queryPool, 0, 2);
+#endif
 
 		VkRenderPassBeginInfo renderPassInfo = {};
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -247,9 +250,11 @@ namespace Renderer
 		renderPassInfo.pClearValues = &clearColor;
 	
 		vkCmdBeginRenderPass(Gctxt.commandBuffers[imageIndex], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-	
 		vkCmdBindPipeline(Gctxt.commandBuffers[imageIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, appRenderData.blockMaterial.gfxPipeline);
-		vkCmdWriteTimestamp(GContext.commandBuffers[imageIndex], VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, appRenderData.queryPool, 0);
+
+#if ENABLE_VK_TIMESTAMP
+		vkCmdWriteTimestamp(Gctxt.commandBuffers[imageIndex], VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, appRenderData.queryPool, 0);
+#endif
 		for (int i = 0; i < primMeshes.size(); ++i)
 		{
 			Mesh* mesh = GetMeshData(primMeshes[i]);
@@ -268,7 +273,10 @@ namespace Renderer
 			vkCmdBindIndexBuffer(Gctxt.commandBuffers[imageIndex], mesh->indexBuffer, 0, VK_INDEX_TYPE_UINT16);
 			vkCmdDrawIndexed(Gctxt.commandBuffers[imageIndex], static_cast<uint32_t>(mesh->indexCount), 1, 0, 0, 0);
 		}
-		vkCmdWriteTimestamp(GContext.commandBuffers[imageIndex], VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, appRenderData.queryPool, 1);
+
+#if ENABLE_VK_TIMESTAMP
+		vkCmdWriteTimestamp(Gctxt.commandBuffers[imageIndex], VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, appRenderData.queryPool, 1);
+#endif
 	
 		vkCmdEndRenderPass(Gctxt.commandBuffers[imageIndex]);
 	
@@ -316,6 +324,7 @@ namespace Renderer
 			handleScreenResize(appRenderData);  
 		}
 
+#if ENABLE_VK_TIMESTAMP
 		//log performance data:
 
 		uint32_t end = 0;
@@ -332,10 +341,11 @@ namespace Renderer
 		float timestampFrequency = GContext.gpu.deviceProps.limits.timestampPeriod;
 
 
-		vkGetQueryPoolResults(GContext.lDevice.device, appRenderData.queryPool, 1, 1, sizeof(uint32_t), &end, 0, VK_QUERY_RESULT_WAIT_BIT);
-		vkGetQueryPoolResults(GContext.lDevice.device, appRenderData.queryPool, 0, 1, sizeof(uint32_t), &begin, 0, VK_QUERY_RESULT_WAIT_BIT);
+		vkGetQueryPoolResults(Gctxt.lDevice.device, appRenderData.queryPool, 1, 1, sizeof(uint32_t), &end, 0, VK_QUERY_RESULT_WAIT_BIT);
+		vkGetQueryPoolResults(Gctxt.lDevice.device, appRenderData.queryPool, 0, 1, sizeof(uint32_t), &begin, 0, VK_QUERY_RESULT_WAIT_BIT);
 		uint32_t diff = end - begin;
 		totalTime += (diff) / (float)1e6;
+#endif
 
 	}
 }
