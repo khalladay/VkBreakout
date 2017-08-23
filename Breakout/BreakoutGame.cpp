@@ -102,6 +102,8 @@ namespace Breakout
 
 #endif 
 		}
+
+		Renderer::populateIndirectCommandBufferForBricks(state.numBricks);
 	}
 
 	bool BallIntersectsRect(int rectPrimHdl)

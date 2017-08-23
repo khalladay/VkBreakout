@@ -16,8 +16,12 @@ namespace Renderer
 		VkRenderPass renderPass; //only 1 render pass for this application
 		std::vector<VkFramebuffer>	swapChainFramebuffers;
 
-		//Because this application is simple enough, we use a 
-		//single uniform buffer for the whole application
+		VkBuffer indirectCommandBuffer;
+		VkDeviceMemory indirectBufferMemory;
+
+		VkBuffer indirectCommandInstanceBuffer;
+		VkDeviceMemory indirectInstanceBufferMemory;
+
 		VkBuffer stagingBuffer;
 		VkDeviceMemory stagingBufferMemory;
 
@@ -38,6 +42,10 @@ namespace Renderer
 	void initializeRendering(HINSTANCE Instance, HWND wndHdl, const char* applicationName);
 	void handleScreenResize(AppRenderData& rd);
 	void draw(const Primitive::PrimitiveUniformObject* uniformData, const std::vector<int> primMeshes);
+	
+	void populateIndirectCommandBufferForBricks(int count);
+	void UpdateIndirectCommandInstanceData(const Primitive::PrimitiveUniformObject* uniformData, int count, int index);
+
 	void* mapBufferPtr(int maxPrims);
 	void unmapBufferPtr();
 }

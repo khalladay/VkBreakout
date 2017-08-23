@@ -287,6 +287,116 @@ namespace Renderer
 		udata = nullptr;
 	}
 
+	void populateIndirectCommandBufferForBricks(int count)
+	{
+		std::vector<Primitive::PrimitiveUniformObject> instanceData;
+		Mesh* rect = GetMeshData(GetRectMesh());
+
+		//since all the bricks use 1 mesh, we really only need 1 indirect command
+		VkDrawIndexedIndirectCommand indirectCmd;
+		indirectCmd.instanceCount = count;
+		indirectCmd.firstInstance = 0;
+		indirectCmd.firstIndex = 0;
+		indirectCmd.indexCount = rect->indexCount;
+
+		VkBuffer indirectCommandStagingBuffer;
+		VkDeviceMemory stagingBufferMemory;
+
+		vkh::CreateBuffer(indirectCommandStagingBuffer,
+			stagingBufferMemory,
+			sizeof(VkDrawIndexedIndirectCommand),
+			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			GContext.lDevice.device,
+			GContext.gpu.device);
+
+		void* stagingData; 
+
+		vkMapMemory(GContext.lDevice.device, stagingBufferMemory, 0, sizeof(VkDrawIndexedIndirectCommand), 0, &stagingData);
+		memcpy(stagingData, &indirectCmd, sizeof(VkDrawIndexedIndirectCommand));
+		vkUnmapMemory(GContext.lDevice.device, stagingBufferMemory);
+
+		vkh::CreateBuffer(appRenderData.indirectCommandBuffer,
+			appRenderData.indirectBufferMemory,
+			sizeof(VkDrawIndexedIndirectCommand),
+			VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+			GContext.lDevice.device,
+			GContext.gpu.device);
+
+		//copy data immediately: 
+		vkh::CopyBuffer(indirectCommandStagingBuffer, appRenderData.indirectCommandBuffer, sizeof(Primitive::PrimitiveUniformObject), GContext.commandPool, GContext.lDevice);
+		
+		vkFreeMemory(GContext.lDevice.device, stagingBufferMemory, nullptr);
+		vkDestroyBuffer(GContext.lDevice.device, indirectCommandStagingBuffer, nullptr);
+	}
+
+	void UpdateIndirectCommandInstanceData(const Primitive::PrimitiveUniformObject* uniformData, int count, int index)
+	{
+		VkBuffer indirectCommandStagingBuffer;
+		VkDeviceMemory stagingBufferMemory;
+
+		size_t updateBufferSize = index == -1 ? sizeof(Primitive::PrimitiveUniformObject) * count : sizeof(Primitive::PrimitiveUniformObject);
+
+		vkh::CreateBuffer(indirectCommandStagingBuffer,
+			stagingBufferMemory,
+			updateBufferSize,
+			VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			GContext.lDevice.device,
+			GContext.gpu.device);
+
+		void* stagingData;
+		vkMapMemory(GContext.lDevice.device, stagingBufferMemory, 0, sizeof(VkDrawIndexedIndirectCommand), 0, &stagingData);
+		memcpy(stagingData, uniformData, updateBufferSize);
+		vkUnmapMemory(GContext.lDevice.device, stagingBufferMemory);
+
+		static bool firstUpdate = false;
+
+		if (!firstUpdate)
+		{
+			//first call should update everything
+			assert(index == -1);
+
+			vkh::CreateBuffer(appRenderData.indirectCommandBuffer,
+				appRenderData.indirectBufferMemory,
+				updateBufferSize,
+				VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+				VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+				GContext.lDevice.device,
+				GContext.gpu.device);
+			
+			firstUpdate = true;
+		}
+
+		VkBufferCopy copyRegion = {};
+
+		if (index == -1)
+		{
+			copyRegion.srcOffset = 0; // Optional
+			copyRegion.dstOffset = 0; // Optional
+			copyRegion.size = updateBufferSize;
+		}
+		else
+		{
+			copyRegion.srcOffset = 0; // Optional
+			copyRegion.dstOffset = index * sizeof(PrimitiveUniformObject); // Optional
+			copyRegion.size = sizeof(PrimitiveUniformObject);
+
+		}
+
+
+		//copy data immediately: 
+		vkh::CopyBuffer(indirectCommandStagingBuffer, appRenderData.indirectCommandBuffer, updateBufferSize, copyRegion, GContext.commandPool, GContext.lDevice);
+
+		if (index == -1)
+		{
+			vkFreeMemory(GContext.lDevice.device, stagingBufferMemory, nullptr);
+			vkDestroyBuffer(GContext.lDevice.device, indirectCommandStagingBuffer, nullptr);
+		}
+
+	}
+
 	void draw(const struct PrimitiveUniformObject* uniformData, const std::vector<int> primMeshes)
 	{	
 		size_t uboAlignment = GContext.gpu.deviceProps.limits.minUniformBufferOffsetAlignment;
@@ -360,6 +470,17 @@ namespace Renderer
 #if ENABLE_VK_TIMESTAMP
 		vkCmdWriteTimestamp(GContext.commandBuffers[imageIndex], VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, appRenderData.queryPool, 0);
 #endif
+
+		//draw the bricks in 1 draw call 
+		Mesh* brickMesh = GetMeshData(GetRectMesh());
+		vkCmdBindVertexBuffers(GContext.commandBuffers[imageIndex], 0, 1, { &brickMesh->vBuffer }, { 0 });
+		vkCmdBindVertexBuffers(GContext.commandBuffers[imageIndex], 1, 1, &appRenderData.indirectCommandInstanceBuffer, { 0 });
+
+		vkCmdBindIndexBuffer(GContext.commandBuffers[imageIndex], brickMesh->indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+		vkCmdDrawIndexedIndirect(GContext.commandBuffers[imageIndex], appRenderData.indirectCommandBuffer, 0, MAX_PRIMS, sizeof(VkDrawIndexedIndirectCommand));
+
+
+		//only pass in the paddle and ball meshes as prims here. 
 		for (int i = 0; i < primMeshes.size(); ++i)
 		{
 			Mesh* mesh = GetMeshData(primMeshes[i]);

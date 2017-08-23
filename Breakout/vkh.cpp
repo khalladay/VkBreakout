@@ -834,6 +834,46 @@ namespace vkh
 		return 0;
 	}
 
+	void CopyBuffer(VkBuffer& src, VkBuffer& dst, VkDeviceSize dataSize, VkBufferCopy copyRegion, VkCommandPool cmdPool, VkhLogicalDevice device)
+	{
+		VkCommandBufferAllocateInfo allocInfo = {};
+		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+		allocInfo.commandPool = cmdPool;
+		allocInfo.commandBufferCount = 1;
+
+		VkCommandBuffer commandBuffer;
+		vkAllocateCommandBuffers(device.device, &allocInfo, &commandBuffer);
+
+		VkCommandBufferBeginInfo beginInfo = {};
+		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+		vkBeginCommandBuffer(commandBuffer, &beginInfo);
+
+		vkCmdCopyBuffer(commandBuffer, src, dst, 1, &copyRegion);
+
+		vkEndCommandBuffer(commandBuffer);
+		VkSubmitInfo submitInfo = {};
+		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		submitInfo.commandBufferCount = 1;
+		submitInfo.pCommandBuffers = &commandBuffer;
+
+		vkQueueSubmit(device.graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+		vkQueueWaitIdle(device.graphicsQueue);
+
+		vkFreeCommandBuffers(device.device, cmdPool, 1, &commandBuffer);
+	}
+
+	void CopyBuffer(VkBuffer& src, VkBuffer& dst, VkDeviceSize dataSize, VkCommandPool cmdPool, VkhLogicalDevice device)
+	{
+		VkBufferCopy copyRegion = {};
+		copyRegion.srcOffset = 0; // Optional
+		copyRegion.dstOffset = 0; // Optional
+		copyRegion.size = dataSize;
+		CopyBuffer(src, dst, dataSize, copyRegion, cmdPool, device);
+	}
+
 	void CreateBuffer(VkBuffer& outBuffer, VkDeviceMemory& outBufferMemory, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, const VkDevice& device, const VkPhysicalDevice& physDevice)
 	{
 		VkBufferCreateInfo bufferInfo = {};

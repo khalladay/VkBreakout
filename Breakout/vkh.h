@@ -115,4 +115,7 @@ namespace vkh
 	void CreateMultisampleStateCreateInfo(VkPipelineMultisampleStateCreateInfo& outInfo, uint32_t sampleCount);
 	void CreateDefaultRenderPassBeginInfo(VkRenderPassBeginInfo& outInfo, VkRenderPass& targetPass, VkFramebuffer& targetBuffer, VkExtent2D extent);
 
+	void CopyBuffer(VkBuffer& src, VkBuffer& dst, VkDeviceSize dataSize, VkCommandPool cmdPool, VkhLogicalDevice device);
+	void CopyBuffer(VkBuffer& src, VkBuffer& dst, VkDeviceSize dataSize, VkBufferCopy copyRegion, VkCommandPool cmdPool, VkhLogicalDevice device);
+
 }
