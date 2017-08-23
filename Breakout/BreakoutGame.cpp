@@ -173,8 +173,8 @@ namespace Breakout
 				setPrimPos(state.ballPrimHdl, state.ballPos);
 
 				state.ballVel.y *= -1;
-
-				destroyPrimitive(state.brickPrimHdls[i]);
+				setPrimCol(state.ballPrimHdl, glm::vec4(0, 0, 0, 0));
+				//destroyPrimitive(state.brickPrimHdls[i]);
 				state.brickPrimHdls[i] = -1;
 			}
 		}

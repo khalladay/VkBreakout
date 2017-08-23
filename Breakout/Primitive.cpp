@@ -60,7 +60,13 @@ namespace Primitive
 		//comment this out to test keeping the buffer always mapped.
 		Renderer::unmapBufferPtr();
 
-		Renderer::draw(primitiveState.uniformData, meshes);
+		static bool firstFrame = false;
+		if (!firstFrame)
+		{
+			Renderer::recordDrawingCommands(primitiveState.uniformData, meshes);
+			firstFrame = true;
+		}
+		Renderer::draw();
 
 	}
 

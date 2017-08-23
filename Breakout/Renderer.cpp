@@ -287,18 +287,82 @@ namespace Renderer
 		udata = nullptr;
 	}
 
-	void draw(const struct PrimitiveUniformObject* uniformData, const std::vector<int> primMeshes)
-	{	
+	void recordDrawingCommands(const struct Primitive::PrimitiveUniformObject* uniformData, const std::vector<int> primMeshes)
+	{
 		size_t uboAlignment = GContext.gpu.deviceProps.limits.minUniformBufferOffsetAlignment;
 		size_t dynamicAlignment = (sizeof(Primitive::PrimitiveUniformObject) / uboAlignment) * uboAlignment + ((sizeof(Primitive::PrimitiveUniformObject) % uboAlignment) > 0 ? uboAlignment : 0);
-	
+
 		VkResult res;
-	
+
+		for (int imageIndex = 0; imageIndex < GContext.commandBuffers.size(); ++imageIndex)
+		{
+			//record drawing commands for cmd buffer
+			VkCommandBufferBeginInfo beginInfo = {};
+			beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+			beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+			beginInfo.pInheritanceInfo = nullptr; // Optional
+			vkResetCommandBuffer(GContext.commandBuffers[imageIndex], VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
+			res = vkBeginCommandBuffer(GContext.commandBuffers[imageIndex], &beginInfo);
+
+			assert(res == VK_SUCCESS);
+
+#if DEVICE_LOCAL_MEMORY
+			VkBufferCopy copyRegion = {};
+			copyRegion.srcOffset = 0; // Optional
+			copyRegion.dstOffset = 0; // Optional
+			copyRegion.size = dynamicAlignment * primMeshes.size();
+
+			vkCmdCopyBuffer(GContext.commandBuffers[imageIndex], appRenderData.stagingBuffer, appRenderData.uniformBuffer, 1, &copyRegion);
+#endif
+
+#if ENABLE_VK_TIMESTAMP
+			vkCmdResetQueryPool(GContext.commandBuffers[imageIndex], appRenderData.queryPool, 0, 2);
+#endif
+			VkRenderPassBeginInfo renderPassInfo = {};
+			renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+			renderPassInfo.renderPass = appRenderData.renderPass;
+			renderPassInfo.framebuffer = appRenderData.swapChainFramebuffers[imageIndex];
+			renderPassInfo.renderArea.offset = { 0, 0 };
+			renderPassInfo.renderArea.extent = GContext.swapChain.extent;
+
+			VkClearValue clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
+			renderPassInfo.clearValueCount = 1;
+			renderPassInfo.pClearValues = &clearColor;
+			vkCmdBeginRenderPass(GContext.commandBuffers[imageIndex], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+			vkCmdBindPipeline(GContext.commandBuffers[imageIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, appRenderData.blockMaterial.gfxPipeline);
+
+#if ENABLE_VK_TIMESTAMP
+			vkCmdWriteTimestamp(GContext.commandBuffers[imageIndex], VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, appRenderData.queryPool, 0);
+#endif
+			for (int i = 0; i < primMeshes.size(); ++i)
+			{
+				Mesh* mesh = GetMeshData(primMeshes[i]);
+				uint32_t dynamicOffset = i * static_cast<uint32_t>(dynamicAlignment);
+				VkBuffer vertexBuffers[] = { mesh->vBuffer };
+				VkDeviceSize offsets[] = { 0 };
+				vkCmdBindDescriptorSets(GContext.commandBuffers[imageIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, appRenderData.blockMaterial.pipelineLayout, 0, 1, &appRenderData.descriptorSet, 1, &dynamicOffset);
+
+				vkCmdBindVertexBuffers(GContext.commandBuffers[imageIndex], 0, 1, vertexBuffers, offsets);
+				vkCmdBindIndexBuffer(GContext.commandBuffers[imageIndex], mesh->indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+				vkCmdDrawIndexed(GContext.commandBuffers[imageIndex], static_cast<uint32_t>(mesh->indexCount), 1, 0, 0, 0);
+			}
+
+#if ENABLE_VK_TIMESTAMP
+			vkCmdWriteTimestamp(GContext.commandBuffers[imageIndex], VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, appRenderData.queryPool, 1);
+#endif
+			vkCmdEndRenderPass(GContext.commandBuffers[imageIndex]);
+			res = vkEndCommandBuffer(GContext.commandBuffers[imageIndex]);
+			assert(res == VK_SUCCESS);
+		}
+	}
+
+	void draw()
+	{	
 		//acquire an image from the swap chain
 		uint32_t imageIndex;
 	
 		//using uint64 max for timeout disables it
-		res = vkAcquireNextImageKHR(GContext.lDevice.device, GContext.swapChain.swapChain, UINT64_MAX, GContext.imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+		VkResult res = vkAcquireNextImageKHR(GContext.lDevice.device, GContext.swapChain.swapChain, UINT64_MAX, GContext.imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
 		
 		if (GContext.frameFences[imageIndex])
 		{
@@ -308,6 +372,7 @@ namespace Renderer
 				vkWaitForFences(GContext.lDevice.device, 1, &GContext.frameFences[imageIndex], true, 0);
 			}
 		}
+
 		vkResetFences(GContext.lDevice.device, 1, &GContext.frameFences[imageIndex]);
 	
 		if (res == VK_ERROR_OUT_OF_DATE_KHR)
@@ -319,66 +384,6 @@ namespace Renderer
 		{
 			assert(res == VK_SUCCESS);
 		}
-	
-	
-		//record drawing commands for cmd buffer
-		VkCommandBufferBeginInfo beginInfo = {};
-		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
-		beginInfo.pInheritanceInfo = nullptr; // Optional
-		vkResetCommandBuffer(GContext.commandBuffers[imageIndex], VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
-		res = vkBeginCommandBuffer(GContext.commandBuffers[imageIndex], &beginInfo);
-
-		assert(res == VK_SUCCESS);
-
-		VkBufferCopy copyRegion = {};
-		copyRegion.srcOffset = 0; // Optional
-		copyRegion.dstOffset = 0; // Optional
-		copyRegion.size = dynamicAlignment * primMeshes.size();
-
-#if DEVICE_LOCAL_MEMORY
-		vkCmdCopyBuffer(GContext.commandBuffers[imageIndex], appRenderData.stagingBuffer, appRenderData.uniformBuffer, 1, &copyRegion);
-#endif
-
-#if ENABLE_VK_TIMESTAMP
-		vkCmdResetQueryPool(GContext.commandBuffers[imageIndex], appRenderData.queryPool, 0, 2);
-#endif
-
-		VkRenderPassBeginInfo renderPassInfo = {};
-		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-		renderPassInfo.renderPass = appRenderData.renderPass;
-		renderPassInfo.framebuffer = appRenderData.swapChainFramebuffers[imageIndex];
-		renderPassInfo.renderArea.offset = { 0, 0 };
-		renderPassInfo.renderArea.extent = GContext.swapChain.extent;
-	
-		VkClearValue clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
-		renderPassInfo.clearValueCount = 1;
-		renderPassInfo.pClearValues = &clearColor;
-		vkCmdBeginRenderPass(GContext.commandBuffers[imageIndex], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-		vkCmdBindPipeline(GContext.commandBuffers[imageIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, appRenderData.blockMaterial.gfxPipeline);
-
-#if ENABLE_VK_TIMESTAMP
-		vkCmdWriteTimestamp(GContext.commandBuffers[imageIndex], VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, appRenderData.queryPool, 0);
-#endif
-		for (int i = 0; i < primMeshes.size(); ++i)
-		{
-			Mesh* mesh = GetMeshData(primMeshes[i]);
-			uint32_t dynamicOffset = i * static_cast<uint32_t>(dynamicAlignment);
-			VkBuffer vertexBuffers[] = { mesh->vBuffer };
-			VkDeviceSize offsets[] = { 0 };
-			vkCmdBindDescriptorSets(GContext.commandBuffers[imageIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, appRenderData.blockMaterial.pipelineLayout, 0, 1, &appRenderData.descriptorSet, 1, &dynamicOffset);
-	
-			vkCmdBindVertexBuffers(GContext.commandBuffers[imageIndex], 0, 1, vertexBuffers, offsets);
-			vkCmdBindIndexBuffer(GContext.commandBuffers[imageIndex], mesh->indexBuffer, 0, VK_INDEX_TYPE_UINT16);
-			vkCmdDrawIndexed(GContext.commandBuffers[imageIndex], static_cast<uint32_t>(mesh->indexCount), 1, 0, 0, 0);
-		}
-
-#if ENABLE_VK_TIMESTAMP
-		vkCmdWriteTimestamp(GContext.commandBuffers[imageIndex], VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, appRenderData.queryPool, 1);
-#endif
-		vkCmdEndRenderPass(GContext.commandBuffers[imageIndex]);
-		res = vkEndCommandBuffer(GContext.commandBuffers[imageIndex]);
-		assert(res == VK_SUCCESS);
 	
 		//wait on writing colours to the buffer until the semaphore says the buffer is available
 		VkSubmitInfo submitInfo = {};
