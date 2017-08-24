@@ -437,7 +437,7 @@ namespace Renderer
 
 		if (count++ > 4999)
 		{
-			printf("VK Render Time (avg of past 5000 frames): %f ms\n", totalTime / 5000.0f);
+			printf("VK Render Time (avg of past 500 frames): %f ms\n", totalTime / 5000.0f);
 			count = 0;
 			totalTime = 0;
 		}
@@ -447,7 +447,8 @@ namespace Renderer
 		vkGetQueryPoolResults(GContext.lDevice.device, appRenderData.queryPool, 1, 1, sizeof(uint32_t), &end, 0, VK_QUERY_RESULT_WAIT_BIT);
 		vkGetQueryPoolResults(GContext.lDevice.device, appRenderData.queryPool, 0, 1, sizeof(uint32_t), &begin, 0, VK_QUERY_RESULT_WAIT_BIT);
 		uint32_t diff = end - begin;
-		totalTime += (diff) / (float)1e6;
+		float frame = (diff) / (float)1e6;
+		totalTime += frame;
 #endif
 
 	}
