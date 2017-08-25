@@ -24,6 +24,7 @@ namespace Breakout
 		int paddlePrimHdl;
 		int ballPrimHdl;
 		int numBricks;
+		int hitBricks;
 		bool gameOver;
 	};
 
@@ -36,14 +37,10 @@ namespace Breakout
 
 	void newGame()
 	{
+		static bool first = false;
 		//cleanup from previous game if it exists
 		{
-			if (state.brickPrimHdls)
-			{
-				delete[] state.brickPrimHdls;
-			}
-
-			destroyAllPrimitives();
+			state.hitBricks = 0;
 			state.gameOver = false;
 		}
 
@@ -61,8 +58,11 @@ namespace Breakout
 
 		//paddle/ball initialization
 		{
-			state.paddlePrimHdl = newPrimitive(GetRectMesh());
-			state.ballPrimHdl = newPrimitive(GetCircleMesh());
+			if (!first)
+			{
+				state.paddlePrimHdl = newPrimitive(GetRectMesh());
+				state.ballPrimHdl = newPrimitive(GetCircleMesh());
+			}
 
 			setPrimPos(state.ballPrimHdl, state.ballPos);
 			int scale = (int)(state.ballRad * 2);
@@ -74,8 +74,12 @@ namespace Breakout
 
 		//construct brick field
 		{
-			state.brickPrimHdls = new int[state.numBricks];
-			memset(state.brickPrimHdls, -1, sizeof(int) * state.numBricks);
+			if (!first)
+			{
+				state.brickPrimHdls = new int[state.numBricks];
+				memset(state.brickPrimHdls, -1, sizeof(int) * state.numBricks);
+
+			}
 
 #if STRESS_TEST
 			for (int i = 0; i < state.numBricks; ++i)
@@ -89,19 +93,34 @@ namespace Breakout
 				state.brickPrimHdls[i] = b;
 			}
 #else
+			
 			for (int i = 0; i < state.numBricks; ++i)
 			{
-				int b = newPrimitive(GetRectMesh());
+				int b;
+				if (!first)
+				{
+					b = newPrimitive(GetRectMesh());
+				}
+				else
+				{
+					b = state.brickPrimHdls[i];
+				}
+
 				glm::vec3 p = glm::vec3(-150 + (i % 20) * 15, -85 + (i / 20) * 5, 0);
 
 				setPrimPos(b, p);
 				setPrimCol(b, glm::vec4((i / 10) / 5.0f, (i % 10) / 10.0f, 1.0f, 1.0f));
 				setPrimScale(b, glm::vec3(5, 1.5, 10));
-				state.brickPrimHdls[i] = b;
+
+				if (!first)
+				{
+					state.brickPrimHdls[i] = b;
+				}
 			}
 
 #endif 
 		}
+		first = true;
 	}
 
 	bool BallIntersectsRect(int rectPrimHdl)
@@ -174,8 +193,9 @@ namespace Breakout
 
 				state.ballVel.y *= -1;
 
-				destroyPrimitive(state.brickPrimHdls[i]);
-				state.brickPrimHdls[i] = -1;
+				setPrimCol(state.brickPrimHdls[i], glm::vec4(0, 0, 0, 0));
+				setPrimPos(state.brickPrimHdls[i], glm::vec3(1000, 0, 0));
+				state.hitBricks++;
 			}
 		}
 
@@ -225,10 +245,7 @@ namespace Breakout
 	{
 		if (state.gameOver) return true;
 
-		for (int i = 0; i < state.numBricks; ++i)
-		{
-			if (state.brickPrimHdls[i] > -1) return false;
-		}
+		if (state.hitBricks < MAX_PRIMS) return false;
 
 		return true;
 	}

@@ -77,10 +77,19 @@ namespace Primitive
 			puo.model = Renderer::appRenderData.VIEW_PROJECTION * (glm::translate(prim.second.pos) * glm::scale(prim.second.scale));
 			puo.color = prim.second.col;
 
+
 			static void* udata = nullptr;
+			
+#if DEVICE_LOCAL_MEMORY
 			vkMapMemory(GContext.lDevice.device, prim.second.stagingMem, 0, sizeof(PrimitiveUniformObject), 0, &udata);
 			memcpy(udata, &puo, sizeof(PrimitiveUniformObject));
 			vkUnmapMemory(GContext.lDevice.device, prim.second.stagingMem);
+#else
+			vkMapMemory(GContext.lDevice.device, prim.second.bufferMem, 0, sizeof(PrimitiveUniformObject), 0, &udata);
+			memcpy(udata, &puo, sizeof(PrimitiveUniformObject));
+			vkUnmapMemory(GContext.lDevice.device, prim.second.bufferMem);
+
+#endif
 
 			idx++;
 			descSets.push_back(&prim.second.descSet);
@@ -90,7 +99,19 @@ namespace Primitive
 			buffers.push_back(&prim.second.uniformBuffer);
 		}
 	
-		Renderer::draw(descSets, buffers, meshes);
+
+		static bool first = false;
+		if (!first)
+		{
+#if DEVICE_LOCAL_MEMORY
+			Renderer::recordDrawingCommands(descSets, buffers, meshes);
+#else
+			Renderer::recordDrawingCommands(descSets, meshes);
+#endif
+			first = true;
+		}
+
+		Renderer::draw();
 
 	}
 
