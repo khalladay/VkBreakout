@@ -20,7 +20,6 @@ namespace Primitive
 		VkDeviceMemory stagingMem;
 
 		VkDescriptorSet descSet;
-		void* mapped;
 		int meshId;
 	};
 
@@ -128,10 +127,8 @@ namespace Primitive
 
 #if DEVICE_LOCAL_MEMORY
 		Renderer::createDescriptorSet(p.descSet, p.uniformBuffer, p.bufferMem, p.stagingBuffer, p.stagingMem, Renderer::appRenderData);
-		vkMapMemory(vkh::GContext.lDevice.device, p.stagingMem, 0, sizeof(PrimitiveUniformObject), 0, &p.mapped);
 #else
 		Renderer::createDescriptorSet(p.descSet, p.uniformBuffer, p.bufferMem, Renderer::appRenderData);
-		vkMapMemory(vkh::GContext.lDevice.device, p.bufferMem, 0, sizeof(PrimitiveUniformObject), 0, &p.mapped);
 #endif
 
 		primitiveState.primitives.emplace(next_prim_id, p);
