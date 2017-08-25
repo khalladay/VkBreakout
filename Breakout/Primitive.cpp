@@ -87,7 +87,19 @@ namespace Primitive
 			buffers.push_back(&prim.second.uniformBuffer);
 		}
 	
-		Renderer::draw(descSets, buffers, meshes);
+
+		static bool first = false;
+		if (!first)
+		{
+#if DEVICE_LOCAL_MEMORY
+			Renderer::recordDrawingCommands(descSets, buffers, meshes);
+#else
+			Renderer::recordDrawingCommands(descSets, meshes);
+#endif
+			first = true;
+		}
+
+		Renderer::draw();
 
 	}
 
