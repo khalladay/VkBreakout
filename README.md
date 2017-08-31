@@ -4,7 +4,7 @@ This is a quick (and not terribly fun) breakout game made to try out different p
 
 The project has multiple branches, representing different approaches to passing uniform data to shaders, and allocating memory. The branches marked with the prefix 01- are the branches used in my initial performance tests, presented [on my website](http://kylehalladay.com/blog/tutorial/vulkan/2017/08/13/Vulkan-Uniform-Buffers.html). 
 
-The branches marked with 02 or 03 prefixes were used in the [follow up post](http://kylehalladay.com/blog/tutorial/vulkan/2017/08/13/Vulkan-Uniform-Buffers.html)
+The branches marked with 02 or 03 prefixes were used in the [follow up post](http://kylehalladay.com/blog/tutorial/vulkan/2017/08/30/Vulkan-Uniform-Buffers-pt2.html)
 
 The performance of the 01- branches are as follows: 
 
